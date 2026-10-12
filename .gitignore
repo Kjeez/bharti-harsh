@@ -32,6 +32,9 @@ yarn-error.log*
 # references
 references/
 
+# scratch/debug
+scratch/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
