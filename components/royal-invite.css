@@ -1,0 +1,1220 @@
+@import url("https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Great+Vibes&family=Jost:wght@300;400;500;600&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap");
+
+:root {
+  --ry-gold: #cfa851;
+  --ry-gold-light: #f5df93;
+  --ry-gold-dark: #997328;
+  --ry-gold-border: rgba(207, 168, 81, 0.45);
+  --ry-gold-glow: rgba(245, 223, 147, 0.35);
+  --ry-crimson: #630b17;
+  --ry-maroon: #4a0812;
+  --ry-cream: #faf7f2;
+  --ry-parchment: #fdfbf7;
+  --ry-card-bg: rgba(255, 255, 255, 0.94);
+  --ry-text-dark: #3b2c24;
+  --ry-text-gold: #9d7729;
+  --ry-text-muted: #7d7268;
+}
+
+/* Base Container */
+.ry-wrapper {
+  min-height: 100vh;
+  background: #12100e;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: "Cormorant Garamond", serif;
+  color: var(--ry-text-dark);
+  overflow-x: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ry-phone-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background: var(--ry-parchment);
+  position: relative;
+  box-shadow: 0 0 70px rgba(0, 0, 0, 0.8), 0 0 20px rgba(207, 168, 81, 0.2);
+  overflow-x: hidden;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   1. GATE OVERLAY & 3D OPENING ANIMATION
+   ========================================================= */
+.ry-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 10, 12, 0.98);
+  perspective: 1400px;
+  overflow: hidden;
+  transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ry-gate-overlay.open {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+}
+
+.ry-gate-scene {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  perspective: 1200px;
+}
+
+/* Palace scene behind the doors — revealed smoothly when doors open */
+.ry-gate-palace-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.ry-gate-doors-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  perspective: 1200px;
+}
+
+.ry-gate-door {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  transition: transform 1.6s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 1.4s ease 0.2s;
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.85);
+}
+
+.ry-gate-door-left {
+  transform-origin: left center;
+}
+
+.ry-gate-door-right {
+  transform-origin: right center;
+}
+
+.ry-gate-overlay.open .ry-gate-door-left {
+  transform: rotateY(-110deg);
+  opacity: 0;
+}
+
+.ry-gate-overlay.open .ry-gate-door-right {
+  transform: rotateY(110deg);
+  opacity: 0;
+}
+
+.ry-gate-door img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.ry-gate-door-left img {
+  left: 0;
+}
+
+.ry-gate-door-right img {
+  left: 0;
+}
+
+/* Center Ribbon & Wax Seal */
+.ry-ribbon-seal-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.6s ease, opacity 0.6s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ry-gate-overlay.open .ry-ribbon-seal-container {
+  transform: translate(-50%, -50%) scale(1.15);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ry-tap-label {
+  font-family: "Cinzel", serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(245, 223, 147, 0.8);
+  margin-bottom: 18px;
+  animation: ryPulse 2s infinite ease-in-out;
+  text-align: center;
+}
+
+.ry-tap-sub {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: var(--ry-gold-light);
+  margin-top: 14px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  text-align: center;
+}
+
+.ry-seal-ribbon-box {
+  position: relative;
+  width: 280px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ry-ribbon-band {
+  position: absolute;
+  left: -50px;
+  right: -50px;
+  height: 38px;
+  background: linear-gradient(90deg, #eae5db, #ffffff, #ede9df);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(212, 175, 55, 0.4);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.ry-wax-seal {
+  position: relative;
+  z-index: 5;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  filter: drop-shadow(0 8px 25px rgba(0, 0, 0, 0.65));
+  transition: transform 0.3s ease;
+}
+
+.ry-wax-seal:hover {
+  transform: scale(1.06);
+}
+
+@keyframes ryPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+    text-shadow: 0 2px 14px rgba(245, 223, 147, 1);
+  }
+}
+
+/* =========================================================
+   2. PALACE HERO SECTION
+   ========================================================= */
+.ry-hero-section {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 20px 30px;
+}
+
+.ry-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.ry-hero-overlay-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 15, 30, 0.5) 0%,
+    rgba(0, 0, 0, 0.25) 35%,
+    rgba(0, 0, 0, 0.65) 75%,
+    rgba(250, 247, 242, 1) 100%
+  );
+  z-index: 2;
+}
+
+.ry-hero-content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  text-align: center;
+  margin-top: 14vh;
+}
+
+.ry-hero-names {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.ry-hero-blessing {
+  font-family: "Cinzel", "Rozha One", serif;
+  font-size: 15px;
+  letter-spacing: 4px;
+  color: var(--ry-gold-light);
+  text-shadow: 0 0 14px rgba(245, 223, 147, 0.9), 0 2px 8px rgba(0, 0, 0, 0.9);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.ry-hero-sub {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.95);
+  text-transform: uppercase;
+  font-style: italic;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.ry-hero-groom,
+.ry-hero-bride {
+  font-family: "Great Vibes", cursive;
+  font-size: clamp(44px, 12vw, 56px);
+  color: #ffffff;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.95), 0 0 30px rgba(245, 223, 147, 0.9);
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.ry-hero-weds {
+  font-family: "Cinzel", serif;
+  font-size: 15px;
+  letter-spacing: 7px;
+  color: var(--ry-gold-light);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95), 0 0 15px rgba(245, 223, 147, 0.6);
+  margin: 6px 0;
+  font-weight: 600;
+}
+
+.ry-hero-date-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.ry-hero-loc {
+  font-size: 11px;
+  letter-spacing: 6px;
+  color: var(--ry-gold-light);
+  font-weight: 600;
+}
+
+.ry-scroll-down-hint {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  opacity: 0.85;
+}
+
+.ry-scroll-arrow {
+  font-size: 20px;
+  animation: ryBounce 1.8s infinite;
+  margin-top: 4px;
+}
+
+@keyframes ryBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* =========================================================
+   3. SACRED FORMAL INVITATION CARD
+   ========================================================= */
+.ry-formal-card-wrap {
+  position: relative;
+  z-index: 4;
+  padding: 20px 16px 40px;
+}
+
+.ry-formal-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 40px 24px;
+  border: 1px solid rgba(207, 168, 81, 0.35);
+  box-shadow: 0 10px 40px rgba(74, 8, 18, 0.08), 0 2px 10px rgba(0, 0, 0, 0.04);
+  position: relative;
+  text-align: center;
+}
+
+.ry-formal-card::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(207, 168, 81, 0.25);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.ry-ganesh-symbol {
+  font-size: 38px;
+  color: var(--ry-crimson);
+  margin-bottom: 12px;
+  display: inline-block;
+  line-height: 1;
+  text-shadow: 0 0 10px rgba(207, 168, 81, 0.4);
+}
+
+.ry-shloka-verse {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #5a121d;
+  margin-bottom: 22px;
+  font-weight: 600;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+  letter-spacing: 0.5px;
+}
+
+.ry-ik-onkar {
+  font-family: "Noto Sans Gurmukhi", serif;
+  font-size: 40px;
+  color: var(--ry-gold-dark);
+  margin-bottom: 12px;
+  display: inline-block;
+  line-height: 1;
+}
+
+.ry-gurmukhi-verse {
+  font-family: "Noto Sans Gurmukhi", sans-serif;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #443c36;
+  margin-bottom: 24px;
+  font-weight: 500;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ry-cordially-title {
+  font-family: "Alex Brush", cursive;
+  font-size: 34px;
+  color: var(--ry-maroon);
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.ry-formal-lead {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #554d46;
+  max-width: 290px;
+  margin: 0 auto 24px;
+  font-weight: 400;
+}
+
+.ry-couple-names-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ry-person-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 32px;
+  color: var(--ry-crimson);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.ry-person-parents {
+  font-size: 14px;
+  color: var(--ry-gold-dark);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+
+.ry-formal-with {
+  font-family: "Alex Brush", cursive;
+  font-size: 24px;
+  color: var(--ry-text-muted);
+  margin: 4px 0;
+}
+
+/* =========================================================
+   4. SCRATCH TO REVEAL HEART SECTION
+   ========================================================= */
+.ry-scratch-section {
+  padding: 40px 20px;
+  text-align: center;
+  background: linear-gradient(180deg, #faf7f2 0%, #f4ede1 100%);
+  position: relative;
+}
+
+.ry-sec-eyebrow {
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--ry-gold-dark);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.ry-sec-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: var(--ry-maroon);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 30px;
+  line-height: 1.3;
+}
+
+.ry-scratch-container {
+  position: relative;
+  width: 280px;
+  height: 260px;
+  margin: 0 auto;
+}
+
+.ry-heart-shape-mask {
+  clip-path: url(#ryHeartClip);
+  -webkit-clip-path: url(#ryHeartClip);
+  filter: drop-shadow(0 10px 25px rgba(207, 168, 81, 0.35));
+}
+
+.ry-heart-revealed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 2px solid var(--ry-gold-light);
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+
+/* Heart outline decorative inside */
+.ry-revealed-heart-shape {
+  width: 230px;
+  height: 210px;
+  border: 2px solid var(--ry-gold);
+  clip-path: path("M12,21.35L10.55,20.03C5.4,15.36 2,12.28 2,8.5C2,5.42 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.09C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.42 22,8.5C22,12.28 18.6,15.36 13.45,20.04L12,21.35Z");
+}
+
+.ry-date-day {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 46px;
+  font-weight: 700;
+  color: var(--ry-maroon);
+  line-height: 1;
+}
+
+.ry-date-month {
+  font-family: "Cinzel", serif;
+  font-size: 20px;
+  letter-spacing: 5px;
+  color: var(--ry-gold-dark);
+  font-weight: 600;
+  margin: 6px 0;
+}
+
+.ry-date-year {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 28px;
+  color: var(--ry-maroon);
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.ry-scratch-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 20px;
+  transition: opacity 0.8s ease;
+}
+
+.ry-scratch-canvas.fade-revealed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ry-scratch-hint {
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--ry-gold-dark);
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   5. COUNTDOWN & POLAROID SECTION
+   ========================================================= */
+.ry-countdown-section {
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--ry-parchment);
+}
+
+.ry-countdown-heading {
+  font-family: "Alex Brush", cursive;
+  font-size: 38px;
+  color: var(--ry-maroon);
+  margin-bottom: 25px;
+}
+
+.ry-timer-grid {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 35px;
+}
+
+.ry-timer-box {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 68px;
+  padding: 14px 6px 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(207, 168, 81, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ry-timer-num {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ry-gold-dark);
+  line-height: 1;
+}
+
+.ry-timer-label {
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--ry-text-muted);
+  text-transform: uppercase;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* Polaroid Card */
+.ry-polaroid-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 14px 14px 28px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  max-width: 290px;
+  margin: 0 auto;
+  transform: rotate(-1.5deg);
+  transition: transform 0.4s ease;
+}
+
+.ry-polaroid-card:hover {
+  transform: rotate(0deg) scale(1.02);
+}
+
+.ry-polaroid-img {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+/* =========================================================
+   6. OUR STORY SECTION
+   ========================================================= */
+.ry-story-section {
+  padding: 50px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--ry-parchment) 0%, #f6f0e4 100%);
+  position: relative;
+}
+
+.ry-story-title {
+  font-family: "Alex Brush", cursive;
+  font-size: 42px;
+  color: var(--ry-maroon);
+  margin-bottom: 25px;
+}
+
+.ry-story-text {
+  font-size: 16px;
+  line-height: 1.9;
+  color: #4b423a;
+  max-width: 380px;
+  margin: 0 auto;
+  font-weight: 400;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* =========================================================
+   7. WEDDING EVENTS SECTION & CARDS
+   ========================================================= */
+.ry-events-section {
+  padding: 50px 18px 40px;
+  background: var(--ry-parchment);
+}
+
+.ry-events-header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.ry-events-title {
+  font-family: "Alex Brush", cursive;
+  font-size: 44px;
+  color: var(--ry-maroon);
+}
+
+.ry-event-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 28px 20px 24px;
+  margin-bottom: 35px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(207, 168, 81, 0.28);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ry-event-name {
+  font-family: "Alex Brush", cursive;
+  font-size: 34px;
+  color: var(--ry-gold-dark);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.ry-event-date {
+  font-family: "Cinzel", serif;
+  font-size: 15px;
+  letter-spacing: 2px;
+  color: #4a3f35;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ry-event-time {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--ry-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.ry-event-photo-wrap {
+  width: 100%;
+  height: 250px;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.ry-event-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ry-venue-label {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--ry-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.ry-venue-name {
+  font-family: "Cinzel", serif;
+  font-size: 17px;
+  letter-spacing: 1.5px;
+  color: var(--ry-gold-dark);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.ry-venue-address {
+  font-size: 14px;
+  color: #63584e;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.ry-maps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #f7f3ec, #efe8db);
+  color: #554435;
+  border: 1px solid rgba(207, 168, 81, 0.4);
+  border-radius: 25px;
+  padding: 10px 22px;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ry-maps-btn:hover {
+  background: var(--ry-gold);
+  color: #fff;
+  border-color: var(--ry-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(207, 168, 81, 0.3);
+}
+
+/* =========================================================
+   FLIGHT JOURNEY (CANADA TO INDIA)
+   ========================================================= */
+.ry-flight-journey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 10px;
+  margin: 10px 0 30px;
+}
+
+.ry-destination-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ry-city-art {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.08));
+}
+
+.ry-destination-name {
+  font-family: "Cinzel", serif;
+  font-size: 17px;
+  letter-spacing: 4px;
+  color: var(--ry-crimson);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ry-flight-path {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 14px 0;
+  position: relative;
+  height: 90px;
+}
+
+.ry-dashed-line {
+  width: 2px;
+  height: 100%;
+  background-image: linear-gradient(to bottom, #8a202e 50%, transparent 50%);
+  background-size: 2px 10px;
+  background-repeat: repeat-y;
+}
+
+.ry-airplane-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--ry-crimson);
+  filter: drop-shadow(0 2px 6px rgba(138, 32, 46, 0.35));
+  animation: ryPlaneFloat 2.5s infinite ease-in-out;
+}
+
+@keyframes ryPlaneFloat {
+  0%, 100% { transform: translateY(-50%) rotate(180deg); }
+  50% { transform: translateY(-38%) rotate(180deg); }
+}
+
+/* =========================================================
+   8. FAMILY BLESSINGS SECTION
+   ========================================================= */
+.ry-family-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 35px 20px;
+  margin-bottom: 35px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(207, 168, 81, 0.28);
+  text-align: center;
+}
+
+.ry-family-group {
+  margin-bottom: 22px;
+}
+
+.ry-family-group:last-child {
+  margin-bottom: 0;
+}
+
+.ry-family-role {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--ry-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.ry-family-names {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 19px;
+  color: #3f3630;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   9. RSVP FORM SECTION
+   ========================================================= */
+.ry-rsvp-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 35px 22px;
+  margin-bottom: 35px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(207, 168, 81, 0.28);
+  text-align: center;
+}
+
+.ry-rsvp-title {
+  font-family: "Cinzel", serif;
+  font-size: 26px;
+  letter-spacing: 5px;
+  color: var(--ry-crimson);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.ry-rsvp-sub {
+  font-size: 15px;
+  color: var(--ry-text-muted);
+  margin-bottom: 24px;
+}
+
+.ry-events-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.ry-check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #eae5db;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ry-check-item:hover,
+.ry-check-item.active {
+  background: #faf6ee;
+  border-color: var(--ry-gold);
+}
+
+.ry-check-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #b8a892;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ry-check-item.active .ry-check-circle {
+  border-color: var(--ry-crimson);
+  background: var(--ry-crimson);
+}
+
+.ry-check-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ry-check-text {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 17px;
+  color: #3b332d;
+  font-weight: 600;
+}
+
+.ry-input-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.ry-input-label {
+  display: block;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ry-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.ry-input-field,
+.ry-textarea-field {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #ded6c8;
+  background: #faf8f5;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 16px;
+  color: var(--ry-text-dark);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ry-input-field:focus,
+.ry-textarea-field:focus {
+  border-color: var(--ry-gold);
+  background: #fff;
+}
+
+.ry-rsvp-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--ry-crimson), var(--ry-maroon));
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(99, 11, 23, 0.35);
+  transition: all 0.3s ease;
+}
+
+.ry-rsvp-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(99, 11, 23, 0.5);
+}
+
+.ry-rsvp-success {
+  background: #f7f9f3;
+  border: 1px solid #84a864;
+  color: #3d5e23;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+/* =========================================================
+   10. THANK YOU & CONTACT FOOTER
+   ========================================================= */
+.ry-footer-section {
+  background: linear-gradient(180deg, #78101e 0%, #540813 100%);
+  color: #ffffff;
+  padding: 45px 20px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ry-footer-title {
+  font-family: "Alex Brush", cursive;
+  font-size: 48px;
+  color: var(--ry-gold-light);
+  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 223, 147, 0.6);
+  margin-bottom: 24px;
+}
+
+.ry-contact-item {
+  margin-bottom: 18px;
+}
+
+.ry-contact-name {
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ry-contact-phone {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 17px;
+  color: var(--ry-gold-light);
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+.ry-contact-phone:hover {
+  text-decoration: underline;
+}
+
+.ry-footer-brand {
+  margin-top: 30px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 1px;
+}
+
+/* =========================================================
+   11. FLOATING VINYL MUSIC PLAYER BUTTON
+   ========================================================= */
+.ry-vinyl-player {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 500;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #111111;
+  border: 2px solid var(--ry-gold);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(207, 168, 81, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ry-vinyl-player:hover {
+  transform: scale(1.1);
+}
+
+.ry-vinyl-disc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2a2a2a 20%, #151515 25%, #2a2a2a 45%, #111111 50%, #222222 75%, #0e0e0e 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ry-vinyl-player.playing .ry-vinyl-disc {
+  animation: rySpinVinyl 3.5s linear infinite;
+}
+
+.ry-vinyl-center-gold {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 15%, var(--ry-gold) 60%, var(--ry-gold-dark) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.ry-vinyl-center-gold::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #111;
+}
+
+@keyframes rySpinVinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
