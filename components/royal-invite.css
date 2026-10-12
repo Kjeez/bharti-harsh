@@ -255,11 +255,31 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(10, 15, 30, 0.5) 0%,
-    rgba(0, 0, 0, 0.25) 35%,
-    rgba(0, 0, 0, 0.65) 75%,
-    rgba(250, 247, 242, 1) 100%
+    rgba(10, 15, 30, 0.45) 0%,
+    rgba(0, 0, 0, 0.2) 30%,
+    rgba(18, 12, 7, 0.5) 62%,
+    rgba(184, 138, 42, 0.45) 80%,
+    rgba(235, 198, 92, 0.82) 92%,
+    #d4af37 100%
   );
+  z-index: 2;
+}
+
+.ry-hero-section::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 240px;
+  background: radial-gradient(
+    ellipse 140% 100% at 50% 100%,
+    rgba(255, 235, 160, 0.95) 0%,
+    rgba(235, 198, 92, 0.8) 35%,
+    rgba(197, 154, 48, 0.45) 65%,
+    transparent 100%
+  );
+  pointer-events: none;
   z-index: 2;
 }
 
@@ -346,19 +366,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #fff;
+  color: #4a0812;
   font-family: "Cinzel", serif;
   font-size: 13px;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   text-transform: uppercase;
-  margin-bottom: 20px;
-  opacity: 0.85;
+  margin-bottom: 22px;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 246, 190, 0.9), 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .ry-scroll-arrow {
   font-size: 20px;
   animation: ryBounce 1.8s infinite;
   margin-top: 4px;
+  color: #4a0812;
 }
 
 @keyframes ryBounce {
@@ -367,30 +389,62 @@
 }
 
 /* =========================================================
-   3. SACRED FORMAL INVITATION CARD
+   3. SACRED FORMAL INVITATION CARD (MATCHING GOLDEN BACKGROUND)
    ========================================================= */
 .ry-formal-card-wrap {
   position: relative;
   z-index: 4;
-  padding: 20px 16px 40px;
+  padding: 30px 16px 50px;
+  background: linear-gradient(
+    180deg,
+    #d4af37 0%,
+    #e8cb72 18%,
+    #f7e29a 38%,
+    #e8cb72 65%,
+    #c99e2e 88%,
+    #b88a24 100%
+  );
+  box-shadow: inset 0 15px 35px rgba(0, 0, 0, 0.15), 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.ry-formal-card-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.5) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .ry-formal-card {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 40px 24px;
-  border: 1px solid rgba(207, 168, 81, 0.35);
-  box-shadow: 0 10px 40px rgba(74, 8, 18, 0.08), 0 2px 10px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 20px;
+  padding: 42px 24px;
+  border: 2px solid #b88a2a;
+  box-shadow: 
+    0 16px 45px rgba(74, 8, 18, 0.18),
+    0 0 35px rgba(255, 246, 190, 0.65),
+    inset 0 0 20px rgba(212, 175, 55, 0.12);
   position: relative;
   text-align: center;
+  backdrop-filter: blur(10px);
 }
 
 .ry-formal-card::before {
   content: "";
   position: absolute;
   inset: 8px;
-  border: 1px solid rgba(207, 168, 81, 0.25);
-  border-radius: 12px;
+  border: 1.5px solid rgba(184, 138, 42, 0.55);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.ry-formal-card::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed rgba(184, 138, 42, 0.35);
+  border-radius: 10px;
   pointer-events: none;
 }
 
