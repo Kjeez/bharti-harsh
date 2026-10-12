@@ -233,6 +233,9 @@ function ConfettiOverlay({ active }) {
 export default function RoyalInvite() {
   // Gate state: 'closed' -> 'opening' -> 'open'
   const [gateState, setGateState] = useState("closed");
+  const gateStateRef = useRef("closed");
+  const overlayRef = useRef(null);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const audioRef = useRef(null);
@@ -268,21 +271,50 @@ export default function RoyalInvite() {
   };
 
   // Tap to Begin gate opening action
-  const handleOpenGate = () => {
-    if (gateState !== "closed") return;
+  const handleOpenGate = useCallback((e) => {
+    if (e) {
+      if (typeof e.stopPropagation === "function") e.stopPropagation();
+    }
+    if (gateStateRef.current !== "closed") return;
+    gateStateRef.current = "opening";
     setGateState("opening");
 
     // Start playing gentle background instrumental automatically
     const audio = audioRef.current;
     if (audio) {
-      audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      try {
+        audio.currentTime = 0;
+        audio.volume = 0.85;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => setIsPlaying(true))
+            .catch(() => setIsPlaying(false));
+        }
+      } catch {}
     }
 
     // Sequence gate opening and smooth disappearance after full 1.8s animation
     setTimeout(() => {
+      gateStateRef.current = "open";
       setGateState("open");
     }, 1800);
-  };
+  }, []);
+
+  // Fail-safe native event listener directly on the overlay element
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    const onTrigger = (e) => {
+      handleOpenGate(e);
+    };
+    el.addEventListener("click", onTrigger);
+    el.addEventListener("touchend", onTrigger);
+    return () => {
+      el.removeEventListener("click", onTrigger);
+      el.removeEventListener("touchend", onTrigger);
+    };
+  }, [handleOpenGate]);
 
   const handleHeartRevealed = () => {
     setShowConfetti(true);
@@ -335,44 +367,64 @@ export default function RoyalInvite() {
       {/* =========================================================
           1. INTERACTIVE ROYAL GATE OVERLAY
           ========================================================= */}
-      {gateState !== "open" && (
-        <div
-          className={`ry-gate-overlay ${gateState === "opening" ? "open" : ""}`}
-        >
-          <div className="ry-gate-scene" onClick={handleOpenGate}>
-            {/* Palace Moonlight Preview revealed as doors swing open (NO closed door behind) */}
-            <img
-              src="/images/palace_night_hb.jpg"
-              alt="Royal Palace Night"
-              className="ry-gate-palace-preview"
-            />
+      <div
+        ref={overlayRef}
+        className={`ry-gate-overlay ${gateState === "opening" ? "open" : ""} ${
+          gateState === "open" ? "open gate-hidden" : ""
+        }`}
+        onClick={handleOpenGate}
+        onTouchEnd={handleOpenGate}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") handleOpenGate(e);
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Tap to open royal wedding invitation"
+        style={{ cursor: "pointer" }}
+      >
+        <div className="ry-gate-scene">
+          {/* Palace Moonlight Preview revealed as doors swing open */}
+          <img
+            src="/images/palace_night_hb.jpg"
+            alt="Royal Palace Night"
+            className="ry-gate-palace-preview"
+            draggable="false"
+          />
 
-            {/* 3D Dual Swing Doors */}
-            <div className="ry-gate-doors-wrap">
-              <div className="ry-gate-door ry-gate-door-left">
-                <img src="/images/gate_hb_left.jpg" alt="Left Royal Door" />
-              </div>
-              <div className="ry-gate-door ry-gate-door-right">
-                <img src="/images/gate_hb_right.jpg" alt="Right Royal Door" />
-              </div>
+          {/* 3D Dual Swing Doors */}
+          <div className="ry-gate-doors-wrap">
+            <div className="ry-gate-door ry-gate-door-left">
+              <img
+                src="/images/gate_hb_left.jpg"
+                alt="Left Royal Door"
+                draggable="false"
+              />
             </div>
-
-            {/* Central Ribbon, HB Wax Seal & "TAP TO OPEN" */}
-            <div className="ry-ribbon-seal-container">
-              <span className="ry-tap-label">✦ TAP TO OPEN ✦</span>
-              <div className="ry-seal-ribbon-box">
-                <div className="ry-ribbon-band" />
-                <img
-                  src="/images/wax_seal_hb.png"
-                  alt="HB Monogram Royal Wax Seal"
-                  className="ry-wax-seal"
-                />
-              </div>
-              <span className="ry-tap-sub">HARSH &amp; BHARTI</span>
+            <div className="ry-gate-door ry-gate-door-right">
+              <img
+                src="/images/gate_hb_right.jpg"
+                alt="Right Royal Door"
+                draggable="false"
+              />
             </div>
           </div>
+
+          {/* Central Ribbon, HB Wax Seal & "TAP TO OPEN" */}
+          <div className="ry-ribbon-seal-container">
+            <span className="ry-tap-label">✦ TAP TO OPEN ✦</span>
+            <div className="ry-seal-ribbon-box">
+              <div className="ry-ribbon-band" />
+              <img
+                src="/images/wax_seal_hb.png"
+                alt="HB Monogram Royal Wax Seal"
+                className="ry-wax-seal"
+                draggable="false"
+              />
+            </div>
+            <span className="ry-tap-sub">HARSH &amp; BHARTI</span>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* =========================================================
           MAIN INVITATION CONTENT CONTAINER
