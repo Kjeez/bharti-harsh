@@ -309,10 +309,10 @@ export default function RoyalInvite() {
 
   return (
     <div className="ry-wrapper">
-      {/* Background Audio Player with gentle instrumental */}
+      {/* Background Audio Player: Ed Sheeran - Thinking Out Loud */}
       <audio
         ref={audioRef}
-        src="/audio/wedding-bgm.wav"
+        src="/audio/wedding-bgm.mp3"
         loop
         preload="auto"
       />
