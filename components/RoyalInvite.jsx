@@ -205,7 +205,6 @@ function RoseSymbol({ tone, seed }) {
 
 function FloralDefs() {
   const grads = {
-    red: { o: ["#5c0716", "#c8303f"], m: ["#47040f", "#b11d30"], i: ["#330109", "#951226"], core: ["#7a0a1c", "#240006"] },
     white: { o: ["#b4a3a0", "#fffaf8"], m: ["#a28f89", "#fbf4f1"], i: ["#8a7570", "#f3e9e5"], core: ["#efe2de", "#9d8580"] },
   };
   return (
@@ -225,68 +224,44 @@ function FloralDefs() {
             </radialGradient>
           </g>
         ))}
-        <filter id="rs-red" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" floodColor="#1c0005" floodOpacity="0.75" />
-        </filter>
         <filter id="rs-white" x="-30%" y="-30%" width="160%" height="160%">
           <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" floodColor="#5b4040" floodOpacity="0.4" />
         </filter>
-        <linearGradient id="leaf-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#4d7a45" />
-          <stop offset="1" stopColor="#173219" />
-        </linearGradient>
-        <RoseSymbol tone="red" seed={3} />
         <RoseSymbol tone="white" seed={8} />
-        <symbol id="leaf" viewBox="0 -14 52 28">
-          <path d="M0 0C12-13 34-14 52 0C34 13 12 12 0 0Z" fill="url(#leaf-g)" />
-          <path d="M2 0Q26-1 50 0M14 0l6-5M24 0l6-6M34 0l6-5M14 0l6 5M24 0l6 6M34 0l6 5" stroke="rgba(255,255,255,.18)" strokeWidth="0.8" fill="none" />
-        </symbol>
       </defs>
     </svg>
   );
 }
 
-function Flower({ kind, x, y, s, rot = 0, z = 1, side = "left", fi = 0 }) {
-  const style = { [side]: `${x}%`, bottom: `${y}px`, width: `${s}px`, height: `${s}px`, zIndex: z, transform: `rotate(${rot}deg)`, "--fi": fi };
-  return (
-    <svg className={`flower flower-${kind}`} style={style} viewBox={kind === "leaf" ? "0 -14 52 28" : "-52 -52 104 104"} aria-hidden="true">
-      <use href={`#${kind === "leaf" ? "leaf" : `rose-${kind}`}`} />
-    </svg>
-  );
-}
-
-const BAND_HERO = [
-  { kind: "leaf", x: -6, y: 70, s: 90, rot: -30 },
-  { kind: "leaf", x: 30, y: 58, s: 80, rot: -160 },
-  { kind: "leaf", x: 62, y: 84, s: 86, rot: -20 },
-  { kind: "leaf", x: 88, y: 66, s: 84, rot: -150 },
-  { kind: "white", x: -10, y: -14, s: 130, rot: 20, z: 2 },
-  { kind: "red", x: 16, y: -30, s: 118, rot: -10, z: 3 },
-  { kind: "white", x: 36, y: 6, s: 96, rot: 40, z: 2 },
-  { kind: "red", x: 52, y: -22, s: 124, rot: 15, z: 4 },
-  { kind: "red", x: 72, y: 30, s: 104, rot: -25, z: 3 },
-  { kind: "white", x: 82, y: -26, s: 120, rot: 5, z: 4 },
-  { kind: "red", x: 96, y: 10, s: 92, rot: 30, z: 2 },
+/* Gold lotus ornament that draws itself in */
+const LOTUS = [
+  "M110 8C98 26 97 48 110 66C123 48 122 26 110 8Z",
+  "M110 66C92 58 80 42 82 22C96 30 106 46 110 66Z",
+  "M110 66C128 58 140 42 138 22C124 30 114 46 110 66Z",
+  "M110 66C84 66 64 54 56 36C76 36 98 48 110 66Z",
+  "M110 66C136 66 156 54 164 36C144 36 122 48 110 66Z",
+  "M110 20C106 32 106 46 110 56C114 46 114 32 110 20",
+  "M66 71Q110 79 154 71",
+  "M66 71C50 66 38 70 28 75C20 78 12 75 14 69C16 64 23 65 23 69",
+  "M154 71C170 66 182 70 192 75C200 78 208 75 206 69C204 64 197 65 197 69",
+  "M28 75C18 80 8 80 2 78M192 75C202 80 212 80 218 78",
 ];
 
-const BAND_RSVP = [
-  { kind: "leaf", x: 4, y: 40, s: 70, rot: -20 },
-  { kind: "leaf", x: 70, y: 46, s: 74, rot: -160 },
-  { kind: "red", x: -6, y: -6, s: 96, rot: 10, z: 2 },
-  { kind: "white", x: 14, y: 8, s: 84, rot: -20, z: 3 },
-  { kind: "red", x: 32, y: -12, s: 92, rot: 35, z: 2 },
-  { kind: "white", x: 50, y: 4, s: 98, rot: 0, z: 3 },
-  { kind: "red", x: 68, y: -8, s: 90, rot: -15, z: 2 },
-  { kind: "white", x: 84, y: 6, s: 86, rot: 25, z: 3 },
-];
-
-function RoseBand({ items, className }) {
+function Lotus({ className = "" }) {
   return (
-    <div className={`rose-band ${className}`} aria-hidden="true">
-      {items.map((it, i) => (
-        <Flower key={i} fi={i} {...it} />
+    <svg className={`lotus ${className}`} viewBox="0 0 220 84" aria-hidden="true">
+      <defs>
+        <linearGradient id="lotus-gold" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#b8893b" />
+          <stop offset="0.5" stopColor="#fbe6b0" />
+          <stop offset="1" stopColor="#b8893b" />
+        </linearGradient>
+      </defs>
+      {LOTUS.map((d, i) => (
+        <path key={i} d={d} pathLength="1" style={{ "--i": i }} />
       ))}
-    </div>
+      <circle cx="110" cy="76" r="2.2" className="lotus-dot" />
+    </svg>
   );
 }
 
@@ -816,8 +791,8 @@ export default function RoyalInvite() {
             <span>Scroll</span>
             <i />
           </div>
-          <div className="hero-roses">
-            <RoseBand items={BAND_HERO} className="rose-band-hero" />
+          <div className="hero-ornament">
+            <Lotus className="lotus-hero" />
           </div>
         </section>
 
@@ -965,7 +940,7 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec wine sec-rsvp">
           <Tear seed={7} tone="wine" />
-          <RoseBand items={BAND_RSVP} className="rose-band-rsvp rv rv-none" />
+          <Lotus className="lotus-rsvp rv rv-none" />
           <Title>Confirm Your Attendance</Title>
           <p className="body-copy rv rv-blur">
             To help us prepare for a joyful celebration, kindly confirm your attendance.
