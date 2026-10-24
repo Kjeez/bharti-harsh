@@ -1,264 +1,564 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  MapPin, Volume2, VolumeX, Heart, Calendar, Check,
-  Clock, Sparkles
-} from "lucide-react";
+import { MapPin, Play, Pause, Check, Phone, CalendarPlus } from "lucide-react";
 import "./royal-invite.css";
 
-// Target Wedding Ceremony Date: 24 November 2026 06:00 PM (IST)
-const WEDDING_TARGET_ISO = "2026-11-24T18:00:00";
+// Baraat: 24 November 2026, 6:00 PM IST
+const WEDDING_TARGET_ISO = "2026-11-24T18:00:00+05:30";
 
-function useCountdown(targetIso) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, past: false });
+const CALENDAR_URL =
+  "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+  "&text=" + encodeURIComponent("Harsh & Bharti — Wedding Ceremony") +
+  "&dates=20261124T123000Z/20261124T183000Z" +
+  "&location=" + encodeURIComponent("Radisson Blu Hotel, Plot 4, Sector 13, Dwarka, New Delhi 110075");
 
-  useEffect(() => {
-    const calculate = () => {
-      const diff = new Date(targetIso).getTime() - new Date().getTime();
-      if (isNaN(diff) || diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, past: true });
-        return;
-      }
-      setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-        past: false,
-      });
-    };
-    calculate();
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, [targetIso]);
+const SCHEDULE = [
+  {
+    day: "Monday",
+    date: "23 November",
+    items: [{ time: "7:00 PM", title: "Ring Ceremony & Sangeet", note: "The Grand Ballroom" }],
+  },
+  {
+    day: "Tuesday",
+    date: "24 November",
+    items: [
+      { time: "6:00 PM", title: "Baraat", note: "Radisson Blu, Dwarka" },
+      { time: "7:00 PM", title: "Wedding Ceremony", note: "Vivah Sanskar" },
+      { time: "10:00 PM", title: "Pheras", note: "Under the stars" },
+    ],
+  },
+  {
+    day: "Wednesday",
+    date: "25 November",
+    items: [{ time: "7:30 PM", title: "Grand Reception", note: "Mystique Banquet" }],
+  },
+];
 
-  return timeLeft;
+const VENUES = [
+  {
+    key: "sangeet",
+    tab: "Sangeet",
+    event: "Ring Ceremony & Sangeet · 23 Nov",
+    name: "The Grand Ballroom",
+    address: "New Delhi",
+    sketch: "/images/sketch_palace.png",
+    maps: "https://maps.google.com/?q=New+Delhi",
+  },
+  {
+    key: "wedding",
+    tab: "Wedding",
+    event: "Wedding Ceremony · 24 Nov",
+    name: "Radisson Blu Hotel",
+    address: "Plot 4, Sector 13, Dwarka, New Delhi — 110075",
+    sketch: "/images/sketch_wedding.png",
+    maps: "https://maps.google.com/?q=Radisson+Blu+Hotel+New+Delhi+Dwarka",
+  },
+  {
+    key: "reception",
+    tab: "Reception",
+    event: "Grand Reception · 25 Nov",
+    name: "Mystique Banquet",
+    address: "New Delhi",
+    sketch: "/images/sketch_reception.png",
+    maps: "https://maps.google.com/?q=Mystique+banquet+New+Delhi",
+  },
+];
+
+const RSVP_EVENTS = ["Sangeet · 23 Nov", "Wedding · 24 Nov", "Reception · 25 Nov"];
+
+/* =========================================================
+   Deterministic randomness (identical on server and client)
+   ========================================================= */
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const f = (n) => n.toFixed(1);
+
+function tornPath(seed, lift = 0) {
+  const r = rng(seed);
+  const ph = r() * 6.28;
+  const ph2 = r() * 6.28;
+  const yAt = (x) => 17 - lift + Math.sin(x / 38 + ph) * 4 + Math.sin(x / 13 + ph2) * 1.6 + (r() - 0.5) * 4.4;
+  let d = `M0 34 L0 ${f(yAt(0))}`;
+  for (let x = 0; x < 400; ) {
+    x = Math.min(400, x + 2 + r() * 6);
+    d += ` L${f(x)} ${f(yAt(x))}`;
+  }
+  return d + " L400 34 Z";
+}
+
+function smoothClosed(pts) {
+  const N = pts.length;
+  let d = `M${f(pts[0][0])} ${f(pts[0][1])}`;
+  for (let i = 0; i < N; i++) {
+    const p0 = pts[(i - 1 + N) % N], p1 = pts[i], p2 = pts[(i + 1) % N], p3 = pts[(i + 2) % N];
+    d += ` C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+  }
+  return d + "Z";
+}
+
+const SEAL_OUTER = (() => {
+  const r = rng(11);
+  const pts = [];
+  for (let i = 0; i < 34; i++) {
+    const a = (i / 34) * Math.PI * 2;
+    const rad = 52 + Math.sin(a * 7 + 1) * 2.2 + (r() - 0.5) * 4;
+    pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+  }
+  return smoothClosed(pts);
+})();
+
+/* =========================================================
+   Embossed rose damask used on the envelope
+   ========================================================= */
+const MOTIF = `
+  <path fill='FILL' d='M-22 4C-26-10-16-24 0-24C16-24 26-10 22 4C18 16 6 22 0 22C-6 22-18 16-22 4Z'/>
+  <path d='M-12-2C-12-12 0-16 8-10C14-5 12 4 4 6C-3 8-7 2-4-3C-1-7 5-6 5-2'/>
+  <path d='M-18 8C-10 16 10 16 18 8M-16-12C-8-20 8-20 16-12'/>
+  <path fill='FILL' d='M18 14C30 10 42 16 48 26C36 30 24 26 18 14Z'/>
+  <path fill='FILL' d='M-18 14C-30 10-42 16-48 26C-36 30-24 26-18 14Z'/>
+  <path d='M0 22C2 40-8 56-24 66M30-20C40-30 52-26 50-16C48-8 38-10 40-16M-30-20C-40-30-52-26-50-16C-48-8-38-10-40-16'/>`;
+
+function damaskTile() {
+  const layer = (dx, dy, stroke, fill) =>
+    `<g transform='translate(${dx} ${dy})' fill='none' stroke='${stroke}' stroke-width='1.5' stroke-linecap='round'>
+      <g transform='translate(42 44)'>${MOTIF.replaceAll("FILL", fill)}</g>
+      <g transform='translate(122 124) rotate(180) scale(.92)'>${MOTIF.replaceAll("FILL", fill)}</g>
+      <path d='M90 30C100 46 116 50 128 44M10 110C26 104 36 116 34 130'/>
+    </g>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'>
+    ${layer(1.1, 1.3, "rgba(8,0,6,.55)", "rgba(8,0,6,.25)")}
+    ${layer(-0.8, -0.9, "rgba(255,190,225,.13)", "rgba(255,190,225,.05)")}
+    ${layer(0, 0, "rgba(120,46,92,.55)", "rgba(110,40,86,.28)")}
+  </svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, " "))}")`;
+}
+
+const GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .25  0 0 0 0 .1  0 0 0 0 .12  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>"
+)}")`;
+
+const ROOT_STYLE = { "--damask": damaskTile(), "--grain": GRAIN };
+
+/* Glowing floral line art that draws itself onto the envelope */
+const SPRIG = [
+  "M0 50C-6 30 6 10 0-6",
+  "M-14-18C-16-30-6-38 0-38C8-38 16-30 14-18C12-10 4-6 0-6C-6-6-12-10-14-18Z",
+  "M-6-22C-6-30 4-32 7-26C9-21 4-16-1-18C-4-20-2-25 2-24",
+  "M0 20C10 12 22 14 28 22C18 28 8 26 0 20Z",
+  "M-1 6C-11-2-23 0-28 8C-18 14-8 12-1 6Z",
+  "M0 50C-14 56-24 48-20 40C-17 34-10 36-11 41",
+  "M2 34C14 40 22 34 18 28",
+  "M12-36C18-50 28-50 28-43C28-38 21-37 18-41",
+  "M-12-34C-20-46-30-44-29-37C-28-32-21-33-20-37",
+];
+
+/* =========================================================
+   Roses, leaves & doves (SVG)
+   ========================================================= */
+const PETAL_LAYERS = [
+  { n: 5, L: 47, W: 30, off: 0, g: "o" },
+  { n: 5, L: 39, W: 27, off: 36, g: "o" },
+  { n: 5, L: 30, W: 22, off: 12, g: "m" },
+  { n: 4, L: 21, W: 17, off: 52, g: "m" },
+  { n: 3, L: 13, W: 12, off: 20, g: "i" },
+];
+
+function petalD(L, W) {
+  return `M0 0C${f(-W)} ${f(-L * 0.25)} ${f(-W * 0.95)} ${f(-L * 0.95)} ${f(-W * 0.25)} ${f(-L)}Q0 ${f(-L * 1.07)} ${f(W * 0.25)} ${f(-L)}C${f(W * 0.95)} ${f(-L * 0.95)} ${f(W)} ${f(-L * 0.25)} 0 0Z`;
+}
+
+function RoseSymbol({ tone, seed }) {
+  const r = rng(seed);
+  return (
+    <symbol id={`rose-${tone}`} viewBox="-52 -52 104 104">
+      {PETAL_LAYERS.map((layer, li) => (
+        <g key={li} filter={li ? `url(#rs-${tone})` : undefined}>
+          {Array.from({ length: layer.n }, (_, i) => {
+            const ang = layer.off + (360 / layer.n) * i + (r() - 0.5) * 12;
+            const L = layer.L * (0.92 + r() * 0.12);
+            const W = layer.W * (0.92 + r() * 0.12);
+            return (
+              <g key={i} transform={`rotate(${f(ang)})`}>
+                <path d={petalD(L, W)} fill={`url(#rg-${tone}-${layer.g})`} />
+                <path
+                  d={`M${f(-W * 0.62)} ${f(-L * 0.84)}Q0 ${f(-L * 1.1)} ${f(W * 0.62)} ${f(-L * 0.84)}`}
+                  className={`rose-rim rose-rim-${tone}`}
+                />
+              </g>
+            );
+          })}
+        </g>
+      ))}
+      <circle r="6" fill={`url(#rg-${tone}-core)`} />
+      <path d="M-1-1a2 2 0 1 1 2 3a4 4 0 1 1-5-5a6.5 6.5 0 1 1 8 7.5" className={`rose-swirl rose-swirl-${tone}`} />
+    </symbol>
+  );
+}
+
+function FloralDefs() {
+  const grads = {
+    red: { o: ["#5c0716", "#c8303f"], m: ["#47040f", "#b11d30"], i: ["#330109", "#951226"], core: ["#7a0a1c", "#240006"] },
+    white: { o: ["#b4a3a0", "#fffaf8"], m: ["#a28f89", "#fbf4f1"], i: ["#8a7570", "#f3e9e5"], core: ["#efe2de", "#9d8580"] },
+  };
+  return (
+    <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" focusable="false">
+      <defs>
+        {Object.entries(grads).map(([tone, g]) => (
+          <g key={tone}>
+            {["o", "m", "i"].map((k) => (
+              <linearGradient key={k} id={`rg-${tone}-${k}`} x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stopColor={g[k][0]} />
+                <stop offset="1" stopColor={g[k][1]} />
+              </linearGradient>
+            ))}
+            <radialGradient id={`rg-${tone}-core`}>
+              <stop offset="0" stopColor={g.core[1]} />
+              <stop offset="1" stopColor={g.core[0]} />
+            </radialGradient>
+          </g>
+        ))}
+        <filter id="rs-red" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" floodColor="#1c0005" floodOpacity="0.75" />
+        </filter>
+        <filter id="rs-white" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" floodColor="#5b4040" floodOpacity="0.4" />
+        </filter>
+        <linearGradient id="leaf-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4d7a45" />
+          <stop offset="1" stopColor="#173219" />
+        </linearGradient>
+        <RoseSymbol tone="red" seed={3} />
+        <RoseSymbol tone="white" seed={8} />
+        <symbol id="leaf" viewBox="0 -14 52 28">
+          <path d="M0 0C12-13 34-14 52 0C34 13 12 12 0 0Z" fill="url(#leaf-g)" />
+          <path d="M2 0Q26-1 50 0M14 0l6-5M24 0l6-6M34 0l6-5M14 0l6 5M24 0l6 6M34 0l6 5" stroke="rgba(255,255,255,.18)" strokeWidth="0.8" fill="none" />
+        </symbol>
+      </defs>
+    </svg>
+  );
+}
+
+function Flower({ kind, x, y, s, rot = 0, z = 1, side = "left" }) {
+  const style = { [side]: `${x}%`, bottom: `${y}px`, width: `${s}px`, height: `${s}px`, zIndex: z, transform: `rotate(${rot}deg)` };
+  return (
+    <svg className={`flower flower-${kind}`} style={style} viewBox={kind === "leaf" ? "0 -14 52 28" : "-52 -52 104 104"} aria-hidden="true">
+      <use href={`#${kind === "leaf" ? "leaf" : `rose-${kind}`}`} />
+    </svg>
+  );
+}
+
+const BAND_HERO = [
+  { kind: "leaf", x: -6, y: 70, s: 90, rot: -30 },
+  { kind: "leaf", x: 30, y: 58, s: 80, rot: -160 },
+  { kind: "leaf", x: 62, y: 84, s: 86, rot: -20 },
+  { kind: "leaf", x: 88, y: 66, s: 84, rot: -150 },
+  { kind: "white", x: -10, y: -14, s: 130, rot: 20, z: 2 },
+  { kind: "red", x: 16, y: -30, s: 118, rot: -10, z: 3 },
+  { kind: "white", x: 36, y: 6, s: 96, rot: 40, z: 2 },
+  { kind: "red", x: 52, y: -22, s: 124, rot: 15, z: 4 },
+  { kind: "red", x: 72, y: 30, s: 104, rot: -25, z: 3 },
+  { kind: "white", x: 82, y: -26, s: 120, rot: 5, z: 4 },
+  { kind: "red", x: 96, y: 10, s: 92, rot: 30, z: 2 },
+];
+
+const BAND_RSVP = [
+  { kind: "leaf", x: 4, y: 40, s: 70, rot: -20 },
+  { kind: "leaf", x: 70, y: 46, s: 74, rot: -160 },
+  { kind: "red", x: -6, y: -6, s: 96, rot: 10, z: 2 },
+  { kind: "white", x: 14, y: 8, s: 84, rot: -20, z: 3 },
+  { kind: "red", x: 32, y: -12, s: 92, rot: 35, z: 2 },
+  { kind: "white", x: 50, y: 4, s: 98, rot: 0, z: 3 },
+  { kind: "red", x: 68, y: -8, s: 90, rot: -15, z: 2 },
+  { kind: "white", x: 84, y: 6, s: 86, rot: 25, z: 3 },
+];
+
+function RoseBand({ items, className }) {
+  return (
+    <div className={`rose-band ${className}`} aria-hidden="true">
+      {items.map((it, i) => (
+        <Flower key={i} {...it} />
+      ))}
+    </div>
+  );
+}
+
+function Dove({ className }) {
+  return (
+    <svg className={`dove ${className}`} viewBox="-40 -32 80 52" aria-hidden="true">
+      <path className="dove-wing dove-wing-far" d="M6 2C2-10-6-22-18-30C-6-29 8-19 16-2Z" />
+      <path d="M-30 6C-22 2-10 0 2 2C10 3 16 0 22-4C25-6 29-6 31-3C32-1 34 0 37 0C34 2 31 3 29 5C24 11 12 14 0 13C-10 12-20 10-26 12L-37 17C-35 12-33 9-30 6Z" fill="#fdfbff" />
+      <path className="dove-wing" d="M2 4C-2-8-12-21-30-28C-12-28 6-17 14 2Z" />
+      <circle cx="27" cy="-3" r="0.9" fill="#3a2a40" />
+    </svg>
+  );
+}
+
+const PETALS = (() => {
+  const r = rng(42);
+  return Array.from({ length: 16 }, () => ({
+    x: f(r() * 100),
+    d: f(9 + r() * 8),
+    delay: f(-r() * 16),
+    s: f(0.6 + r() * 0.7),
+    tone: r() > 0.45 ? "red" : "white",
+  }));
+})();
+
+function Petals() {
+  return (
+    <div className="petals" aria-hidden="true">
+      {PETALS.map((p, i) => (
+        <span
+          key={i}
+          className={`petal petal-${p.tone}`}
+          style={{ "--x": `${p.x}%`, "--d": `${p.d}s`, "--delay": `${p.delay}s`, "--s": p.s }}
+        >
+          <i />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Tear({ seed, tone }) {
+  return (
+    <svg className={`tear tear-${tone}`} viewBox="0 0 400 34" preserveAspectRatio="none" aria-hidden="true">
+      {tone === "wine" && <path d={tornPath(seed + 7, 3)} className="tear-fibre" />}
+      <path d={tornPath(seed)} className="tear-edge" />
+    </svg>
+  );
+}
+
+function Flourish() {
+  return (
+    <svg className="flourish" viewBox="0 0 220 24" aria-hidden="true">
+      <path d="M110 12C96 2 80 2 72 10C66 16 74 22 80 17M110 12C124 2 140 2 148 10C154 16 146 22 140 17M110 12H8M110 12H212" />
+      <path d="M110 6l5 6-5 6-5-6Z" className="flourish-gem" />
+    </svg>
+  );
 }
 
 /* =========================================================
-   Interactive Scratch Card with Gold Heart Foil
+   Wax seal
    ========================================================= */
-function ScratchHeartCard({ onReveal }) {
-  const canvasRef = useRef(null);
-  const [revealed, setRevealed] = useState(false);
-  const isScratching = useRef(false);
+function Seal() {
+  return (
+    <svg viewBox="-60 -60 120 120" className="seal-svg" aria-hidden="true">
+      <defs>
+        <radialGradient id="seal-wax" cx="38%" cy="32%" r="75%">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.45" stopColor="#dfe4f6" />
+          <stop offset="1" stopColor="#9aa3c4" />
+        </radialGradient>
+        <radialGradient id="seal-well" cx="60%" cy="65%" r="80%">
+          <stop offset="0" stopColor="#f4f6ff" />
+          <stop offset="1" stopColor="#c3c9e2" />
+        </radialGradient>
+      </defs>
+      <path d={SEAL_OUTER} fill="url(#seal-wax)" />
+      <circle r="37" fill="url(#seal-well)" />
+      <circle r="37.5" fill="none" stroke="#fff" strokeWidth="2" opacity="0.9" transform="translate(-0.8 -0.8)" />
+      <circle r="37.5" fill="none" stroke="#7d86ab" strokeWidth="1.6" opacity="0.55" transform="translate(0.8 0.9)" />
+      <g className="seal-mono">
+        <text x="-1" y="11" transform="translate(1 1.2)" fill="#ffffff">HB</text>
+        <text x="-1" y="11" fill="#8b93b8">HB</text>
+      </g>
+    </svg>
+  );
+}
 
+/* =========================================================
+   Hooks
+   ========================================================= */
+function useCountdown(targetIso) {
+  const [t, setT] = useState(null);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.offsetWidth || 280;
-    const h = canvas.offsetHeight || 260;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.scale(dpr, dpr);
+    const tick = () => {
+      const diff = new Date(targetIso).getTime() - Date.now();
+      if (diff <= 0) return setT({ past: true });
+      setT({
+        days: Math.floor(diff / 864e5),
+        hours: Math.floor((diff / 36e5) % 24),
+        minutes: Math.floor((diff / 6e4) % 60),
+        seconds: Math.floor((diff / 1e3) % 60),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetIso]);
+  return t;
+}
 
-    // Draw rich metallic gold gradient fill
-    const grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, "#b88a2a");
-    grad.addColorStop(0.25, "#f3d97c");
-    grad.addColorStop(0.5, "#fff6be");
-    grad.addColorStop(0.75, "#d4af37");
-    grad.addColorStop(1, "#8e6718");
+function useReveal(enabled) {
+  useEffect(() => {
+    if (!enabled) return;
+    const els = document.querySelectorAll(".rv:not(.in)");
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [enabled]);
+}
 
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
-
-    // Subtle sparkles/text on foil
-    ctx.fillStyle = "rgba(74, 8, 18, 0.75)";
-    ctx.font = "600 13px 'Cinzel', serif";
-    ctx.textAlign = "center";
-    ctx.fillText("✦ SCRATCH TO REVEAL ✦", w / 2, h / 2 + 10);
+/* =========================================================
+   Sections
+   ========================================================= */
+function Schedule() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, (window.innerHeight * 0.55 - r.top) / r.height));
+      el.style.setProperty("--p", p.toFixed(4));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
-  const scratch = useCallback(
-    (e) => {
-      if (revealed) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.beginPath();
-      ctx.arc(x, y, 32, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Check percentage cleared periodically
-      if (Math.random() < 0.3) {
-        try {
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          let transparentPixels = 0;
-          const totalSamples = imgData.data.length / 32;
-          for (let i = 3; i < imgData.data.length; i += 32) {
-            if (imgData.data[i] === 0) transparentPixels++;
-          }
-          if (transparentPixels / totalSamples > 0.35) {
-            setRevealed(true);
-            if (onReveal) onReveal();
-          }
-        } catch {
-          // Fallback
-        }
-      }
-    },
-    [revealed, onReveal]
-  );
-
   return (
-    <div className="ry-scratch-container ry-heart-shape-mask">
-      {/* SVG Clip Path Definition */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <clipPath id="ryHeartClip" clipPathUnits="objectBoundingBox">
-            <path d="M 0.5, 0.94 C 0.22, 0.72, 0.04, 0.52, 0.04, 0.31 C 0.04, 0.12, 0.17, 0.03, 0.32, 0.03 C 0.42, 0.03, 0.48, 0.1, 0.5, 0.18 C 0.52, 0.1, 0.58, 0.03, 0.68, 0.03 C 0.83, 0.03, 0.96, 0.12, 0.96, 0.31 C 0.96, 0.52, 0.78, 0.72, 0.5, 0.94 Z" />
-          </clipPath>
-        </defs>
+    <div className="tl" ref={ref}>
+      <div className="tl-line" />
+      <div className="tl-fill" />
+      <svg className="tl-rose" viewBox="-52 -52 104 104" aria-hidden="true">
+        <use href="#rose-white" />
       </svg>
+      {SCHEDULE.map((day) => (
+        <div key={day.date} className="tl-day rv">
+          <div className="tl-day-label">
+            <span>{day.day}</span>
+            <b>{day.date}</b>
+          </div>
+          {day.items.map((it) => (
+            <div key={it.title} className="tl-row">
+              <div className="tl-time">{it.time}</div>
+              <div className="tl-dot" />
+              <div className="tl-what">
+                <div className="tl-title">{it.title}</div>
+                <div className="tl-note">{it.note}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
-      {/* Underneath: The revealed date inside heart */}
-      <div className="ry-heart-revealed">
-        <span className="ry-sec-eyebrow" style={{ fontSize: "11px", marginBottom: "2px" }}>SAVE THE DATE</span>
-        <span className="ry-date-day">24</span>
-        <span className="ry-date-month">NOVEMBER</span>
-        <span className="ry-date-year">2026</span>
-        <span style={{ fontSize: "13px", color: "var(--ry-gold-dark)", marginTop: "3px", fontStyle: "italic", fontWeight: 600 }}>
-          Tuesday • Vivah Sanskar
-        </span>
+function Venues() {
+  const [active, setActive] = useState("wedding");
+  const v = VENUES.find((x) => x.key === active);
+  return (
+    <div className="venues">
+      <div className="venue-tabs rv" role="tablist" aria-label="Choose an event">
+        {VENUES.map((x) => (
+          <button
+            key={x.key}
+            role="tab"
+            aria-selected={active === x.key}
+            className={active === x.key ? "on" : ""}
+            onClick={() => setActive(x.key)}
+          >
+            {x.tab}
+          </button>
+        ))}
       </div>
-
-      {/* Gold Scratch Foil Overlay */}
-      <canvas
-        ref={canvasRef}
-        className={`ry-scratch-canvas ${revealed ? "fade-revealed" : ""}`}
-        onMouseDown={(e) => {
-          isScratching.current = true;
-          scratch(e);
-        }}
-        onMouseMove={(e) => {
-          if (isScratching.current) scratch(e);
-        }}
-        onMouseUp={() => (isScratching.current = false)}
-        onMouseLeave={() => (isScratching.current = false)}
-        onTouchStart={scratch}
-        onTouchMove={scratch}
-      />
+      <div className="venue" key={v.key}>
+        <div className="venue-event">{v.event}</div>
+        <div className="venue-name">{v.name}</div>
+        <div className="venue-addr">{v.address}</div>
+        <img className="venue-sketch" src={v.sketch} alt={`Sketch of ${v.name}`} loading="lazy" />
+        <a className="pill pill-wine" href={v.maps} target="_blank" rel="noreferrer">
+          <MapPin size={14} /> Get Directions
+        </a>
+      </div>
     </div>
   );
 }
 
 /* =========================================================
-   Confetti Explosion Component
-   ========================================================= */
-function ConfettiOverlay({ active }) {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    if (!active) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const colors = ["#d4af37", "#f5df93", "#e9c96a", "#cfa851", "#ffffff", "#e05263"];
-    const particles = Array.from({ length: 70 }, () => ({
-      x: canvas.width / 2 + (Math.random() - 0.5) * 120,
-      y: canvas.height * 0.45 + (Math.random() - 0.5) * 100,
-      vx: (Math.random() - 0.5) * 10,
-      vy: (Math.random() - 1.2) * 12,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      rotation: Math.random() * 360,
-      vRot: (Math.random() - 0.5) * 10,
-      alpha: 1,
-    }));
-
-    let animationId;
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let alive = false;
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.28; // gravity
-        p.rotation += p.vRot;
-        p.alpha -= 0.008;
-
-        if (p.alpha > 0) {
-          alive = true;
-          ctx.save();
-          ctx.globalAlpha = Math.max(0, p.alpha);
-          ctx.translate(p.x, p.y);
-          ctx.rotate((p.rotation * Math.PI) / 180);
-          ctx.fillStyle = p.color;
-          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
-          ctx.restore();
-        }
-      });
-
-      if (alive) {
-        animationId = requestAnimationFrame(render);
-      }
-    };
-
-    animationId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationId);
-  }, [active]);
-
-  if (!active) return null;
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        inset: 0,
-        pointerEvents: "none",
-        zIndex: 9999,
-      }}
-    />
-  );
-}
-
-/* =========================================================
-   Main Royal Wedding Invitation Component
+   Main invitation
    ========================================================= */
 export default function RoyalInvite() {
-  // Gate state: 'closed' -> 'opening' -> 'open'
-  const [gateState, setGateState] = useState("closed");
-  const gateStateRef = useRef("closed");
-  const overlayRef = useRef(null);
-
+  // envelope: 'intro' -> 'ready' -> 'opening' -> 'done'
+  const [stage, setStage] = useState("intro");
+  const stageRef = useRef("intro");
+  const [revealed, setRevealed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [burst, setBurst] = useState(false);
   const audioRef = useRef(null);
-
-  useEffect(() => {
-    // Clear any previous stale session key to ensure clean hydration
-    try {
-      sessionStorage.removeItem("royal_gate_opened");
-    } catch {}
-  }, []);
-
-  // RSVP Form state
-  const [rsvpData, setRsvpData] = useState({
-    name: "",
-    contact: "",
-    events: ["Wedding Ceremony (24 Nov)"],
-    message: "",
-  });
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
   const countdown = useCountdown(WEDDING_TARGET_ISO);
 
-  // Audio Play / Pause
+  const [rsvp, setRsvp] = useState({ name: "", contact: "", events: ["Wedding · 24 Nov"], message: "" });
+  const [submitted, setSubmitted] = useState(false);
+
+  useReveal(revealed);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (stageRef.current === "intro") {
+        stageRef.current = "ready";
+        setStage("ready");
+      }
+    }, 3400);
+    return () => clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("inv-locked", stage !== "done");
+    return () => document.documentElement.classList.remove("inv-locked");
+  }, [stage]);
+
+  const openEnvelope = useCallback(() => {
+    if (stageRef.current === "opening" || stageRef.current === "done") return;
+    stageRef.current = "opening";
+    setStage("opening");
+    window.scrollTo(0, 0);
+
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = 0;
+      audio.volume = 0.8;
+      audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    }
+
+    setTimeout(() => setRevealed(true), 1300);
+    setTimeout(() => {
+      stageRef.current = "done";
+      setStage("done");
+    }, 2500);
+  }, []);
+
   const toggleAudio = () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -270,575 +570,377 @@ export default function RoyalInvite() {
     }
   };
 
-  // Tap to Begin gate opening action
-  const handleOpenGate = useCallback((e) => {
-    if (e) {
-      if (typeof e.stopPropagation === "function") e.stopPropagation();
-    }
-    if (gateStateRef.current !== "closed") return;
-    gateStateRef.current = "opening";
-    setGateState("opening");
+  const toggleEvent = (name) =>
+    setRsvp((prev) => ({
+      ...prev,
+      events: prev.events.includes(name) ? prev.events.filter((e) => e !== name) : [...prev.events, name],
+    }));
 
-    // Start playing gentle background instrumental automatically
-    const audio = audioRef.current;
-    if (audio) {
-      try {
-        audio.currentTime = 0;
-        audio.volume = 0.85;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => setIsPlaying(true))
-            .catch(() => setIsPlaying(false));
-        }
-      } catch {}
-    }
-
-    // Sequence gate opening and smooth disappearance after full 1.8s animation
-    setTimeout(() => {
-      gateStateRef.current = "open";
-      setGateState("open");
-    }, 1800);
-  }, []);
-
-  // Fail-safe native event listener directly on the overlay element
-  useEffect(() => {
-    const el = overlayRef.current;
-    if (!el) return;
-    const onTrigger = (e) => {
-      handleOpenGate(e);
-    };
-    el.addEventListener("click", onTrigger);
-    el.addEventListener("touchend", onTrigger);
-    return () => {
-      el.removeEventListener("click", onTrigger);
-      el.removeEventListener("touchend", onTrigger);
-    };
-  }, [handleOpenGate]);
-
-  const handleHeartRevealed = () => {
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3500);
-  };
-
-  const handleToggleEvent = (eventName) => {
-    setRsvpData((prev) => {
-      if (prev.events.includes(eventName)) {
-        return { ...prev, events: prev.events.filter((e) => e !== eventName) };
-      } else {
-        return { ...prev, events: [...prev.events, eventName] };
-      }
-    });
-  };
-
-  const handleRsvpSubmit = (e) => {
+  const submitRsvp = (e) => {
     e.preventDefault();
-    if (!rsvpData.name.trim()) return;
-    setIsSubmitted(true);
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
+    if (!rsvp.name.trim()) return;
+    setSubmitted(true);
+    setBurst(true);
+    setTimeout(() => setBurst(false), 5200);
   };
+
+  const pad = (n) => String(n).padStart(2, "0");
 
   return (
-    <div className="ry-wrapper">
-      {/* Background Audio Player: Ed Sheeran - Thinking Out Loud */}
-      <audio
-        ref={audioRef}
-        src="/audio/wedding-bgm.mp3"
-        loop
-        preload="auto"
-      />
+    <div className={`inv ${revealed ? "revealed" : ""}`} style={ROOT_STYLE}>
+      <FloralDefs />
+      <audio ref={audioRef} src="/audio/wedding-bgm.mp3" loop preload="auto" />
 
-      {/* Confetti Explosion */}
-      <ConfettiOverlay active={showConfetti} />
-
-      {/* Floating Vinyl Music Disc Button */}
-      <button
-        className={`ry-vinyl-player ${isPlaying ? "playing" : ""}`}
-        onClick={toggleAudio}
-        aria-label="Toggle Background Music"
-        title={isPlaying ? "Pause Music" : "Play Music"}
-      >
-        <div className="ry-vinyl-disc">
-          <div className="ry-vinyl-center-gold" />
+      {/* =========================================================
+          ENVELOPE
+          ========================================================= */}
+      {stage !== "done" && (
+        <div
+          className={`env env-${stage}`}
+          onClick={openEnvelope}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openEnvelope()}
+          role="button"
+          tabIndex={0}
+          aria-label="Open the wedding invitation"
+        >
+          <div className="env-body" />
+          <div className="env-inside" />
+          <svg className="env-shadow" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <filter id="flap-shadow" x="-10%" y="-10%" width="120%" height="140%">
+              <feGaussianBlur stdDeviation="1.4" />
+            </filter>
+            <polygon points="0,0 100,0 50,47.5" filter="url(#flap-shadow)" />
+          </svg>
+          <svg className="env-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            {["M50 44L0 0", "M50 44L100 0", "M50 44L0 100", "M50 44L100 100"].map((d) => (
+              <g key={d}>
+                <path d={d} className="env-line" vectorEffect="non-scaling-stroke" />
+                <path d={d} className="env-trace" pathLength="1" vectorEffect="non-scaling-stroke" />
+              </g>
+            ))}
+          </svg>
+          <svg className="env-florals" viewBox="0 0 100 216" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="1.1" result="b" />
+                <feMerge>
+                  <feMergeNode in="b" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            {[
+              "translate(16 110) rotate(-6) scale(.4)",
+              "translate(84 110) rotate(6) scale(-.4 .4)",
+              "translate(50 182) scale(.38)",
+              "translate(50 30) rotate(180) scale(.3)",
+            ].map((t, gi) => (
+              <g key={t} transform={t} filter="url(#glow)" className="env-sprig" style={{ "--gi": gi }}>
+                {SPRIG.map((d, i) => (
+                  <path key={i} d={d} pathLength="1" style={{ "--i": i }} />
+                ))}
+              </g>
+            ))}
+          </svg>
+          <div className="env-light" />
+          <div className="env-flap">
+            <div className="env-flap-face env-flap-front" />
+            <div className="env-flap-face env-flap-back" />
+          </div>
+          <div className="env-seal">
+            <Seal />
+          </div>
+          <div className="env-hint">
+            <span className="script">You are invited</span>
+            <span className="env-hint-cta">Tap the seal to open</span>
+          </div>
         </div>
+      )}
+
+      {/* Music */}
+      <button
+        className={`music ${isPlaying ? "playing" : ""}`}
+        onClick={toggleAudio}
+        aria-label={isPlaying ? "Pause music" : "Play music"}
+      >
+        {isPlaying ? <Pause size={16} /> : <Play size={16} />}
       </button>
 
-      {/* =========================================================
-          1. INTERACTIVE ROYAL GATE OVERLAY
-          ========================================================= */}
-      <div
-        ref={overlayRef}
-        className={`ry-gate-overlay ${gateState === "opening" ? "open" : ""} ${
-          gateState === "open" ? "open gate-hidden" : ""
-        }`}
-        onClick={handleOpenGate}
-        onTouchEnd={handleOpenGate}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") handleOpenGate(e);
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label="Tap to open royal wedding invitation"
-        style={{ cursor: "pointer" }}
-      >
-        <div className="ry-gate-scene">
-          {/* Palace Moonlight Preview revealed as doors swing open */}
-          <img
-            src="/images/palace_night_hb.jpg"
-            alt="Royal Palace Night"
-            className="ry-gate-palace-preview"
-            draggable="false"
-          />
-
-          {/* 3D Dual Swing Doors */}
-          <div className="ry-gate-doors-wrap">
-            <div className="ry-gate-door ry-gate-door-left">
-              <img
-                src="/images/gate_hb_left.jpg"
-                alt="Left Royal Door"
-                draggable="false"
-              />
-            </div>
-            <div className="ry-gate-door ry-gate-door-right">
-              <img
-                src="/images/gate_hb_right.jpg"
-                alt="Right Royal Door"
-                draggable="false"
-              />
-            </div>
-          </div>
-
-          {/* Central Ribbon, HB Wax Seal & "TAP TO OPEN" */}
-          <div className="ry-ribbon-seal-container">
-            <span className="ry-tap-label">✦ TAP TO OPEN ✦</span>
-            <div className="ry-seal-ribbon-box">
-              <div className="ry-ribbon-band" />
-              <img
-                src="/images/wax_seal_hb.png"
-                alt="HB Monogram Royal Wax Seal"
-                className="ry-wax-seal"
-                draggable="false"
-              />
-            </div>
-            <span className="ry-tap-sub">HARSH &amp; BHARTI</span>
-          </div>
+      {burst && (
+        <div className="petals petals-burst" aria-hidden="true">
+          {PETALS.concat(PETALS).map((p, i) => (
+            <span
+              key={i}
+              className={`petal petal-${p.tone}`}
+              style={{ "--x": `${(Number(p.x) + i * 13) % 100}%`, "--d": `${(Number(p.d) * 0.45).toFixed(1)}s`, "--delay": `${((i % 9) * 0.12).toFixed(2)}s`, "--s": p.s }}
+            >
+              <i />
+            </span>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* =========================================================
-          MAIN INVITATION CONTENT CONTAINER
-          ========================================================= */}
-      <div className="ry-phone-container">
+      <main className="inv-col">
         {/* =========================================================
-            2. PALACE HERO SECTION (UNDER MOONLIGHT)
+            HERO
             ========================================================= */}
-        <section className="ry-hero-section">
-          <img
-            src="/images/palace_night_hb.jpg"
-            alt="Royal Palace Courtyard Under Moonlight"
-            className="ry-hero-bg"
-          />
-          <div className="ry-hero-overlay-gradient" />
+        <section className="hero">
+          <img className="hero-bg" src="/images/palace_night_hb.jpg" alt="" />
+          <div className="hero-shade" />
+          <Dove className="dove-1" />
+          <Dove className="dove-2" />
+          <Dove className="dove-3" />
+          <Petals />
+          <div className="hero-copy">
+            <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>
+            <p className="script hero-day">Wedding Day</p>
+            <p className="hero-date">24 · 11 · 2026</p>
+            <h1 className="hero-names">
+              <span className="hn-1">Harsh</span>
+              <span className="hn-amp">&amp;</span>
+              <span className="hn-2">Bharti</span>
+            </h1>
+            <p className="hero-place">New Delhi</p>
+          </div>
+          <RoseBand items={BAND_HERO} className="rose-band-hero" />
+        </section>
 
-          <div className="ry-hero-content">
-            <div className="ry-hero-names">
-              <div className="ry-hero-blessing">॥ श्री गणेशाय नमः ॥</div>
-              <div className="ry-hero-sub">Together with our families</div>
-              <h1 className="ry-hero-groom">Harsh Wadhera</h1>
-              <div className="ry-hero-weds">✦ WEDS ✦</div>
-              <h1 className="ry-hero-bride">Bharti Sharma</h1>
-              <div className="ry-hero-date-banner">
-                <span>24 • NOVEMBER • 2026</span>
-                <span className="ry-hero-loc">NEW DELHI</span>
-              </div>
+        {/* =========================================================
+            INVITATION LETTER
+            ========================================================= */}
+        <section className="sec wine">
+          <Tear seed={1} tone="wine" />
+          <p className="shloka rv">
+            वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।
+            <br />
+            निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
+          </p>
+          <h2 className="script sec-title rv">Dear Friends &amp; Family,</h2>
+          <p className="body-copy rv">
+            With the divine grace of the Almighty and the heartfelt blessings of our elders, we request the
+            honour of your gracious presence as we begin our forever.
+          </p>
+          <div className="couple rv">
+            <div className="person">
+              <div className="person-name">Harsh Wadhera</div>
+              <div className="person-parents">Son of Smt. Anita &amp; Sh. Rajesh Wadhera</div>
+            </div>
+            <div className="script couple-with">with</div>
+            <div className="person">
+              <div className="person-name">Bharti Sharma</div>
+              <div className="person-parents">Daughter of Smt. Sunita &amp; Sh. Sunil Sharma</div>
             </div>
           </div>
+          <p className="body-copy rv">
+            Your love and support mean the world to us, and we would be honoured to have you by our side as we
+            say &ldquo;forever.&rdquo;
+          </p>
+        </section>
 
-          <div className="ry-scroll-down-hint">
-            <span>Scroll</span>
-            <span className="ry-scroll-arrow">⌄</span>
+        {/* =========================================================
+            COUNTDOWN
+            ========================================================= */}
+        <section className="sec paper">
+          <Tear seed={2} tone="paper" />
+          <h2 className="script sec-title rv">The Celebration Begins In</h2>
+          {countdown?.past ? (
+            <p className="cd-done rv">Just married — thank you for your blessings!</p>
+          ) : (
+            <div className="cd rv" aria-live="off">
+              {[
+                ["Days", countdown ? countdown.days : "—"],
+                ["Hours", countdown ? pad(countdown.hours) : "—"],
+                ["Minutes", countdown ? pad(countdown.minutes) : "—"],
+                ["Seconds", countdown ? pad(countdown.seconds) : "—"],
+              ].map(([label, value], i) => (
+                <div key={label} className="cd-cell">
+                  {i > 0 && <span className="cd-sep">:</span>}
+                  <span className="cd-num">{value}</span>
+                  <span className="cd-label">{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="cd-date rv">Tuesday, 24th November 2026</p>
+          <a className="pill pill-wine rv" href={CALENDAR_URL} target="_blank" rel="noreferrer">
+            <CalendarPlus size={14} /> Save the Date
+          </a>
+        </section>
+
+        {/* =========================================================
+            SCHEDULE
+            ========================================================= */}
+        <section className="sec wine">
+          <Tear seed={3} tone="wine" />
+          <h2 className="script sec-title rv">Schedule of Events</h2>
+          <Schedule />
+        </section>
+
+        {/* =========================================================
+            LOCATION
+            ========================================================= */}
+        <section className="sec paper">
+          <Tear seed={4} tone="paper" />
+          <h2 className="script sec-title rv">Location</h2>
+          <Venues />
+        </section>
+
+        {/* =========================================================
+            OUR STORY
+            ========================================================= */}
+        <section className="sec wine">
+          <Tear seed={5} tone="wine" />
+          <h2 className="script sec-title rv">Our Story</h2>
+          <div className="frames rv">
+            <figure className="frame frame-a">
+              <img src="/images/couple_portrait_hb.jpg" alt="Harsh and Bharti" loading="lazy" />
+            </figure>
+            <figure className="frame frame-b">
+              <img src="/images/event_wedding_hb.jpg" alt="The wedding mandap" loading="lazy" />
+            </figure>
+          </div>
+          <div className="story">
+            <p className="body-copy rv">
+              Our journey began with a simple conversation that effortlessly turned into hours of shared
+              laughter, quiet understandings, and an instant connection that felt like home.
+            </p>
+            <p className="body-copy rv">
+              Between shared passions, spontaneous food runs across Delhi, and unconditional support through
+              every high and low, we realised that the best adventures in life are the ones lived together.
+            </p>
+            <p className="body-copy rv">
+              Harsh found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh
+              her rock, partner-in-crime, and easiest source of joy.
+            </p>
+            <p className="body-copy rv">
+              As we step into this sacred lifelong union, we cannot wait to celebrate surrounded by the warmth
+              and blessings of our cherished family and friends.
+            </p>
           </div>
         </section>
 
         {/* =========================================================
-            3. SACRED TRADITIONAL BLESSING & FORMAL INVITATION CARD
+            FAMILY
             ========================================================= */}
-        <div className="ry-formal-card-wrap">
-          <div className="ry-formal-card">
-            {/* Ganesh Ji Motif */}
-            <div className="ry-ganesh-symbol">ॐ</div>
-
-            {/* Sanskrit Shloka */}
-            <p className="ry-shloka-verse">
-              वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।<br />
-              निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
-            </p>
-
-            <h2 className="ry-cordially-title">We Cordially Invite You</h2>
-
-            <p className="ry-formal-lead">
-              With the divine grace of the Almighty and the heartfelt blessings of
-              our elders, we request the honour of your gracious presence to
-              celebrate the auspicious wedding ceremony of
-            </p>
-
-            <div className="ry-couple-names-block">
-              <div>
-                <div className="ry-person-name">Harsh Wadhera</div>
-                <div className="ry-person-parents">
-                  Son of Smt. Anita Wadhera &amp; Sh. Rajesh Wadhera
-                </div>
+        <section className="sec paper">
+          <Tear seed={6} tone="paper" />
+          <h2 className="script sec-title rv">With Love &amp; Blessings</h2>
+          <div className="family">
+            {[
+              ["Grandparents", "Smt. & Sh. Wadhera · Smt. & Sh. Sharma"],
+              ["Parents", "Anita & Rajesh Wadhera\nSunita & Sunil Sharma"],
+              ["Family & Relatives", "Wadhera & Sharma Parivar"],
+              ["With Best Compliments", "All Near & Dear Ones"],
+            ].map(([role, names], i) => (
+              <div key={role} className="family-group rv">
+                {i > 0 && <Flourish />}
+                <div className="family-role">{role}</div>
+                <div className="family-names">{names}</div>
               </div>
-
-              <div className="ry-formal-with">With</div>
-
-              <div>
-                <div className="ry-person-name">Bharti Sharma</div>
-                <div className="ry-person-parents">
-                  Daughter of Smt. Sunita Sharma &amp; Sh. Sunil Sharma
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* =========================================================
-            4. SCRATCH TO REVEAL WEDDING DATE
-            ========================================================= */}
-        <section className="ry-scratch-section">
-          <div className="ry-sec-eyebrow">A SPECIAL SURPRISE</div>
-          <h2 className="ry-sec-title">SCRATCH THE HEART TO REVEAL OUR WEDDING DATE</h2>
-
-          <ScratchHeartCard onReveal={handleHeartRevealed} />
-
-          <div className="ry-scratch-hint">
-            <Sparkles size={16} />
-            <span>SCRATCH TO REVEAL! ✨</span>
+            ))}
           </div>
         </section>
 
         {/* =========================================================
-            5. COUNTDOWN & POLAROID PHOTO
+            RSVP
             ========================================================= */}
-        <section className="ry-countdown-section">
-          <h2 className="ry-countdown-heading">The Big Day Approaches</h2>
+        <section className="sec wine sec-rsvp">
+          <Tear seed={7} tone="wine" />
+          <RoseBand items={BAND_RSVP} className="rose-band-rsvp" />
+          <h2 className="script sec-title rv">Confirm Your Attendance</h2>
+          <p className="body-copy rv">
+            To help us prepare for a joyful celebration, kindly confirm your attendance.
+          </p>
 
-          <div className="ry-timer-grid">
-            <div className="ry-timer-box">
-              <span className="ry-timer-num">
-                {String(countdown.days).padStart(2, "0")}
+          {submitted ? (
+            <div className="rsvp-done rv in">
+              <span className="rsvp-check">
+                <Check size={22} />
               </span>
-              <span className="ry-timer-label">DAYS</span>
+              <p className="script">Thank you, {rsvp.name.split(" ")[0]}!</p>
+              <p className="body-copy">Your RSVP and blessings have been warmly received.</p>
             </div>
-            <div className="ry-timer-box">
-              <span className="ry-timer-num">
-                {String(countdown.hours).padStart(2, "0")}
-              </span>
-              <span className="ry-timer-label">HOURS</span>
-            </div>
-            <div className="ry-timer-box">
-              <span className="ry-timer-num">
-                {String(countdown.minutes).padStart(2, "0")}
-              </span>
-              <span className="ry-timer-label">MINUTES</span>
-            </div>
-            <div className="ry-timer-box">
-              <span className="ry-timer-num">
-                {String(countdown.seconds).padStart(2, "0")}
-              </span>
-              <span className="ry-timer-label">SECONDS</span>
-            </div>
+          ) : (
+            <form className="rsvp rv" onSubmit={submitRsvp}>
+              <label className="field">
+                <span>Your Name</span>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rahul Sharma"
+                  value={rsvp.name}
+                  onChange={(e) => setRsvp({ ...rsvp, name: e.target.value })}
+                />
+              </label>
+              <label className="field">
+                <span>Phone / WhatsApp</span>
+                <input
+                  type="tel"
+                  placeholder="+91 98111 …"
+                  value={rsvp.contact}
+                  onChange={(e) => setRsvp({ ...rsvp, contact: e.target.value })}
+                />
+              </label>
+              <div className="field">
+                <span>I&rsquo;ll be attending</span>
+                <div className="chips">
+                  {RSVP_EVENTS.map((ev) => (
+                    <button
+                      type="button"
+                      key={ev}
+                      className={`chip ${rsvp.events.includes(ev) ? "on" : ""}`}
+                      aria-pressed={rsvp.events.includes(ev)}
+                      onClick={() => toggleEvent(ev)}
+                    >
+                      {ev}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="field">
+                <span>Wishes for the couple</span>
+                <textarea
+                  rows={3}
+                  placeholder="Write your blessings for Harsh & Bharti…"
+                  value={rsvp.message}
+                  onChange={(e) => setRsvp({ ...rsvp, message: e.target.value })}
+                />
+              </label>
+              <button type="submit" className="pill pill-light">
+                Send RSVP
+              </button>
+            </form>
+          )}
+
+          <div className="finale rv">
+            <p className="script finale-hope">Hope to see you there!</p>
+            <p className="finale-names">Harsh &amp; Bharti</p>
           </div>
 
-          {/* Polaroid Frame of Couple */}
-          <div className="ry-polaroid-card">
-            <img
-              src="/images/couple_portrait_hb.jpg"
-              alt="Harsh Wadhera & Bharti Sharma"
-              className="ry-polaroid-img"
-            />
-            <div style={{ textAlign: "center", marginTop: "12px", fontFamily: "Cinzel, serif", fontSize: "13px", color: "var(--ry-gold-dark)", letterSpacing: "2px" }}>
-              HARSH &amp; BHARTI • FOREVER
-            </div>
+          <div className="contacts rv">
+            <div className="contacts-title">For any assistance</div>
+            <a href="tel:+919810012345" className="contact">
+              <Phone size={13} />
+              <span>Rajesh Wadhera</span>
+              <b>+91 98100 12345</b>
+            </a>
+            <a href="tel:+919811154321" className="contact">
+              <Phone size={13} />
+              <span>Sunil Sharma</span>
+              <b>+91 98111 54321</b>
+            </a>
           </div>
         </section>
 
-        {/* =========================================================
-            6. OUR STORY SECTION
-            ========================================================= */}
-        <section className="ry-story-section">
-          <h2 className="ry-story-title">Our Story</h2>
-
-          <div className="ry-story-text">
-            <p>
-              Our journey began with a simple conversation that effortlessly turned
-              into hours of shared laughter, quiet understandings, and an instant
-              connection that felt like home.
-            </p>
-            <p>
-              Between shared passions, spontaneous food runs across Delhi, and
-              unconditional support through every high and low, we realized that
-              the best adventures in life are the ones lived together.
-            </p>
-            <p>
-              Harsh found in Bharti his greatest confidante and brightest smile,
-              while Bharti found in Harsh her rock, partner-in-crime, and easiest
-              source of joy.
-            </p>
-            <p>
-              As we step into this sacred lifelong union, we cannot wait to
-              celebrate our love and embark on forever, surrounded by the warmth
-              and blessings of our cherished family and friends!
-            </p>
-          </div>
-        </section>
-
-        {/* =========================================================
-            7. WEDDING EVENTS SECTION
-            ========================================================= */}
-        <section className="ry-events-section">
-          <div className="ry-events-header">
-            <h2 className="ry-events-title">Wedding Events</h2>
-          </div>
-
-          {/* Event 1: Ring Ceremony & Sangeet */}
-          <div className="ry-event-card">
-            <h3 className="ry-event-name">Ring Ceremony &amp; Sangeet</h3>
-            <div className="ry-event-date">23 NOVEMBER 2026</div>
-            <div className="ry-event-time">MONDAY • 7 PM ONWARDS</div>
-
-            <div className="ry-event-photo-wrap">
-              <img
-                src="/images/event_sangeet.jpg"
-                alt="Ring Ceremony & Sangeet"
-                className="ry-event-photo"
-              />
-            </div>
-
-            <div className="ry-venue-label">VENUE</div>
-            <div className="ry-venue-name">THE GRAND BALLROOM</div>
-            <div className="ry-venue-address">NEW DELHI</div>
-
-            <a
-              href="https://maps.google.com/?q=New+Delhi"
-              target="_blank"
-              rel="noreferrer"
-              className="ry-maps-btn"
-            >
-              <MapPin size={13} />
-              <span>VIEW ON MAPS</span>
-            </a>
-          </div>
-
-          {/* Event 2: Wedding Ceremony (Radisson Blu Hotel, New Delhi Dwarka) */}
-          <div className="ry-event-card">
-            <h3 className="ry-event-name">Wedding Ceremony</h3>
-            <div className="ry-event-date">24 NOVEMBER 2026</div>
-            <div className="ry-event-time">TUESDAY • 7 PM ONWARDS<br /><small style={{ fontSize: "12px", opacity: 0.85 }}>Baraat: 6 PM • Pheras: 10 PM</small></div>
-
-            <div className="ry-event-photo-wrap">
-              <img
-                src="/images/event_wedding_hb.jpg"
-                alt="Wedding Mandap at Radisson Blu Hotel Dwarka"
-                className="ry-event-photo"
-              />
-            </div>
-
-            <div className="ry-venue-label">VENUE</div>
-            <div className="ry-venue-name">RADISSON BLU HOTEL</div>
-            <div className="ry-venue-address">
-              PLOT 4, SECTOR 13, DWARKA<br />NEW DELHI - 110075
-            </div>
-
-            <a
-              href="https://maps.google.com/?q=Radisson+Blu+Hotel+New+Delhi+Dwarka"
-              target="_blank"
-              rel="noreferrer"
-              className="ry-maps-btn"
-            >
-              <MapPin size={13} />
-              <span>VIEW ON MAPS</span>
-            </a>
-          </div>
-
-          {/* Event 3: Grand Reception (Mystique Banquet, New Delhi) */}
-          <div className="ry-event-card">
-            <h3 className="ry-event-name">Grand Reception</h3>
-            <div className="ry-event-date">25 NOVEMBER 2026</div>
-            <div className="ry-event-time">WEDNESDAY • 7:30 PM ONWARDS</div>
-
-            <div className="ry-event-photo-wrap">
-              <img
-                src="/images/event_reception_hb.jpg"
-                alt="Grand Reception at Mystique Banquet"
-                className="ry-event-photo"
-              />
-            </div>
-
-            <div className="ry-venue-label">VENUE</div>
-            <div className="ry-venue-name">MYSTIQUE BANQUET</div>
-            <div className="ry-venue-address">
-              NEW DELHI
-            </div>
-
-            <a
-              href="https://maps.google.com/?q=Mystique+banquet+New+Delhi"
-              target="_blank"
-              rel="noreferrer"
-              className="ry-maps-btn"
-            >
-              <MapPin size={13} />
-              <span>VIEW ON MAPS</span>
-            </a>
-          </div>
-
-          {/* =========================================================
-              8. FAMILY BLESSINGS SECTION
-              ========================================================= */}
-          <div className="ry-family-card">
-            <div className="ry-family-group">
-              <div className="ry-family-role">GRANDPARENTS</div>
-              <div className="ry-family-names">
-                Smt. &amp; Sh. Wadhera • Smt. &amp; Sh. Sharma
-              </div>
-            </div>
-
-            <div className="ry-family-group">
-              <div className="ry-family-role">PARENTS</div>
-              <div className="ry-family-names">
-                Anita &amp; Rajesh Wadhera<br />
-                Sunita &amp; Sunil Sharma
-              </div>
-            </div>
-
-            <div className="ry-family-group">
-              <div className="ry-family-role">FAMILY &amp; RELATIVES</div>
-              <div className="ry-family-names">
-                Wadhera &amp; Sharma Parivar
-              </div>
-            </div>
-
-            <div className="ry-family-group">
-              <div className="ry-family-role">WITH BEST COMPLIMENTS</div>
-              <div className="ry-family-names">
-                All Near &amp; Dear Ones
-              </div>
-            </div>
-          </div>
-
-          {/* =========================================================
-              9. RSVP FORM SECTION
-              ========================================================= */}
-          <div className="ry-rsvp-card">
-            <h3 className="ry-rsvp-title">RSVP</h3>
-            <p className="ry-rsvp-sub">We eagerly look forward to celebrating with you.</p>
-
-            {isSubmitted ? (
-              <div className="ry-rsvp-success">
-                <Check size={24} style={{ display: "inline-block", marginBottom: "6px" }} />
-                <p>Thank you, {rsvpData.name}!</p>
-                <p style={{ fontSize: "14px", fontWeight: "normal", marginTop: "4px" }}>
-                  Your RSVP and blessings have been warmly received.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleRsvpSubmit}>
-                <div className="ry-input-group">
-                  <label className="ry-input-label">Your Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Rahul Sharma"
-                    className="ry-input-field"
-                    value={rsvpData.name}
-                    onChange={(e) => setRsvpData({ ...rsvpData, name: e.target.value })}
-                  />
-                </div>
-
-                <div className="ry-input-group">
-                  <label className="ry-input-label">Contact / Phone / WhatsApp</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. +91 98111..."
-                    className="ry-input-field"
-                    value={rsvpData.contact}
-                    onChange={(e) => setRsvpData({ ...rsvpData, contact: e.target.value })}
-                  />
-                </div>
-
-                <div className="ry-input-group">
-                  <label className="ry-input-label" style={{ marginBottom: "10px" }}>
-                    Which wedding events will you be attending?
-                  </label>
-                  <div className="ry-events-checklist">
-                    {[
-                      "Sangeet & Ring Ceremony (23 Nov)",
-                      "Wedding Ceremony (24 Nov)",
-                      "Grand Reception (25 Nov)",
-                      "Unfortunately, I cannot attend",
-                    ].map((event) => {
-                      const isChecked = rsvpData.events.includes(event);
-                      return (
-                        <div
-                          key={event}
-                          className={`ry-check-item ${isChecked ? "active" : ""}`}
-                          onClick={() => handleToggleEvent(event)}
-                        >
-                          <div className="ry-check-circle">
-                            {isChecked && <div className="ry-check-dot" />}
-                          </div>
-                          <span className="ry-check-text">{event}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="ry-input-group">
-                  <label className="ry-input-label">Your Message &amp; Wishes</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Write your blessings for Harsh & Bharti..."
-                    className="ry-textarea-field"
-                    value={rsvpData.message}
-                    onChange={(e) => setRsvpData({ ...rsvpData, message: e.target.value })}
-                  />
-                </div>
-
-                <button type="submit" className="ry-rsvp-submit-btn">
-                  CONFIRM RSVP
-                </button>
-              </form>
-            )}
-          </div>
-        </section>
-
-        {/* =========================================================
-            10. THANK YOU & CONTACT FOOTER
-            ========================================================= */}
-        <footer className="ry-footer-section">
-          <h2 className="ry-footer-title">Thank You</h2>
-
-          <div className="ry-contact-item">
-            <div className="ry-contact-name">RAJESH WADHERA</div>
-            <a href="tel:+919810012345" className="ry-contact-phone">
-              (+91 98100 12345)
-            </a>
-          </div>
-
-          <div className="ry-contact-item">
-            <div className="ry-contact-name">SUNIL SHARMA</div>
-            <a href="tel:+919811154321" className="ry-contact-phone">
-              (+91 98111 54321)
-            </a>
-          </div>
-
-          <div className="ry-footer-brand">
-            Harsh Wadhera &amp; Bharti Sharma Wedding • 2026
+        <footer className="outro">
+          <img src="/images/couple_portrait_hb.jpg" alt="Harsh and Bharti" loading="lazy" />
+          <div className="outro-fade" />
+          <div className="outro-copy">
+            <span className="script">Forever begins</span>
+            <span className="outro-date">24 · 11 · 2026</span>
           </div>
         </footer>
-      </div>
+      </main>
     </div>
   );
 }
