@@ -134,9 +134,9 @@ function damaskTile() {
       <path d='M90 30C100 46 116 50 128 44M10 110C26 104 36 116 34 130'/>
     </g>`;
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'>
-    ${layer(1.1, 1.3, "rgba(8,0,6,.55)", "rgba(8,0,6,.25)")}
-    ${layer(-0.8, -0.9, "rgba(255,190,225,.13)", "rgba(255,190,225,.05)")}
-    ${layer(0, 0, "rgba(120,46,92,.55)", "rgba(110,40,86,.28)")}
+    ${layer(1, 1.2, "rgba(8,0,6,.42)", "rgba(8,0,6,.16)")}
+    ${layer(-0.7, -0.8, "rgba(255,190,225,.09)", "rgba(255,190,225,.03)")}
+    ${layer(0, 0, "rgba(116,44,90,.36)", "rgba(110,40,86,.16)")}
   </svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, " "))}")`;
 }
@@ -246,8 +246,8 @@ function FloralDefs() {
   );
 }
 
-function Flower({ kind, x, y, s, rot = 0, z = 1, side = "left" }) {
-  const style = { [side]: `${x}%`, bottom: `${y}px`, width: `${s}px`, height: `${s}px`, zIndex: z, transform: `rotate(${rot}deg)` };
+function Flower({ kind, x, y, s, rot = 0, z = 1, side = "left", fi = 0 }) {
+  const style = { [side]: `${x}%`, bottom: `${y}px`, width: `${s}px`, height: `${s}px`, zIndex: z, transform: `rotate(${rot}deg)`, "--fi": fi };
   return (
     <svg className={`flower flower-${kind}`} style={style} viewBox={kind === "leaf" ? "0 -14 52 28" : "-52 -52 104 104"} aria-hidden="true">
       <use href={`#${kind === "leaf" ? "leaf" : `rose-${kind}`}`} />
@@ -284,7 +284,7 @@ function RoseBand({ items, className }) {
   return (
     <div className={`rose-band ${className}`} aria-hidden="true">
       {items.map((it, i) => (
-        <Flower key={i} {...it} />
+        <Flower key={i} fi={i} {...it} />
       ))}
     </div>
   );
@@ -328,6 +328,42 @@ function Petals() {
   );
 }
 
+const SPARKS = (() => {
+  const r = rng(77);
+  return Array.from({ length: 26 }, () => ({
+    x: f(r() * 100),
+    y: f(r() * 100),
+    s: f(1.5 + r() * 2.5),
+    d: f(3 + r() * 4),
+    delay: f(-r() * 7),
+  }));
+})();
+
+function Sparkles({ className = "", count = 26 }) {
+  return (
+    <div className={`sparkles ${className}`} aria-hidden="true">
+      {SPARKS.slice(0, count).map((p, i) => (
+        <i
+          key={i}
+          style={{ left: `${p.x}%`, top: `${p.y}%`, "--sz": `${p.s}px`, "--d": `${p.d}s`, "--delay": `${p.delay}s` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Title({ children }) {
+  return (
+    <div className="title rv">
+      <h2 className="script sec-title">{children}</h2>
+      <svg className="title-flourish" viewBox="0 0 160 16" aria-hidden="true">
+        <path pathLength="1" d="M4 8C40 8 56 2 80 8C104 14 120 8 156 8" />
+        <path className="tf-gem" d="M80 3l4 5-4 5-4-5Z" />
+      </svg>
+    </div>
+  );
+}
+
 function Tear({ seed, tone }) {
   return (
     <svg className={`tear tear-${tone}`} viewBox="0 0 400 34" preserveAspectRatio="none" aria-hidden="true">
@@ -340,7 +376,7 @@ function Tear({ seed, tone }) {
 function Flourish() {
   return (
     <svg className="flourish" viewBox="0 0 220 24" aria-hidden="true">
-      <path d="M110 12C96 2 80 2 72 10C66 16 74 22 80 17M110 12C124 2 140 2 148 10C154 16 146 22 140 17M110 12H8M110 12H212" />
+      <path pathLength="1" d="M110 12C96 2 80 2 72 10C66 16 74 22 80 17M110 12C124 2 140 2 148 10C154 16 146 22 140 17M110 12H8M110 12H212" />
       <path d="M110 6l5 6-5 6-5-6Z" className="flourish-gem" />
     </svg>
   );
@@ -414,7 +450,29 @@ function useReveal(enabled) {
       { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
     );
     els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+
+    // A fast flick can jump an element past the viewport without an intersection
+    // event, so anything already scrolled past is revealed too.
+    let raf = 0;
+    const sweep = () => {
+      raf = 0;
+      const limit = window.innerHeight * 0.94;
+      document.querySelectorAll(".rv:not(.in)").forEach((el) => {
+        if (el.getBoundingClientRect().top < limit) {
+          el.classList.add("in");
+          io.unobserve(el);
+        }
+      });
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(sweep);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [enabled]);
 }
 
@@ -454,13 +512,13 @@ function Schedule() {
         <use href="#rose-white" />
       </svg>
       {SCHEDULE.map((day) => (
-        <div key={day.date} className="tl-day rv">
-          <div className="tl-day-label">
+        <div key={day.date} className="tl-day">
+          <div className="tl-day-label rv rv-z">
             <span>{day.day}</span>
             <b>{day.date}</b>
           </div>
           {day.items.map((it) => (
-            <div key={it.title} className="tl-row">
+            <div key={it.title} className="tl-row rv rv-none">
               <div className="tl-time">{it.time}</div>
               <div className="tl-dot" />
               <div className="tl-what">
@@ -479,8 +537,8 @@ function Venues() {
   const [active, setActive] = useState("wedding");
   const v = VENUES.find((x) => x.key === active);
   return (
-    <div className="venues">
-      <div className="venue-tabs rv" role="tablist" aria-label="Choose an event">
+    <div className="venues rv rv-none">
+      <div className="venue-tabs" role="tablist" aria-label="Choose an event">
         {VENUES.map((x) => (
           <button
             key={x.key}
@@ -534,6 +592,31 @@ export default function RoyalInvite() {
     return () => clearTimeout(id);
   }, []);
 
+  const rootRef = useRef(null);
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const el = rootRef.current;
+      if (!el) return;
+      const y = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      el.style.setProperty("--sy", Math.min(y, 1200).toFixed(0));
+      el.style.setProperty("--prog", max > 0 ? (y / max).toFixed(4) : "0");
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
   useEffect(() => {
     document.documentElement.classList.toggle("inv-locked", stage !== "done");
     return () => document.documentElement.classList.remove("inv-locked");
@@ -552,11 +635,11 @@ export default function RoyalInvite() {
       audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }
 
-    setTimeout(() => setRevealed(true), 1300);
+    setTimeout(() => setRevealed(true), 2500);
     setTimeout(() => {
       stageRef.current = "done";
       setStage("done");
-    }, 2500);
+    }, 3300);
   }, []);
 
   const toggleAudio = () => {
@@ -587,7 +670,8 @@ export default function RoyalInvite() {
   const pad = (n) => String(n).padStart(2, "0");
 
   return (
-    <div className={`inv ${revealed ? "revealed" : ""}`} style={ROOT_STYLE}>
+    <div ref={rootRef} className={`inv ${revealed ? "revealed" : ""}`} style={ROOT_STYLE}>
+      <div className="progress" aria-hidden="true" />
       <FloralDefs />
       <audio ref={audioRef} src="/audio/wedding-bgm.mp3" loop preload="auto" />
 
@@ -603,8 +687,18 @@ export default function RoyalInvite() {
           tabIndex={0}
           aria-label="Open the wedding invitation"
         >
-          <div className="env-body" />
           <div className="env-inside" />
+          <div className="env-card" aria-hidden="true">
+            <div className="env-card-inner">
+              <span className="env-card-kicker">॥ श्री गणेशाय नमः ॥</span>
+              <span className="env-card-sub">Together with their families</span>
+              <span className="script env-card-name">Harsh</span>
+              <span className="script env-card-amp">&amp;</span>
+              <span className="script env-card-name">Bharti</span>
+              <span className="env-card-date">24 · 11 · 2026</span>
+            </div>
+          </div>
+          <div className="env-body" />
           <svg className="env-shadow" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <filter id="flap-shadow" x="-10%" y="-10%" width="120%" height="140%">
               <feGaussianBlur stdDeviation="1.4" />
@@ -647,8 +741,16 @@ export default function RoyalInvite() {
             <div className="env-flap-face env-flap-front" />
             <div className="env-flap-face env-flap-back" />
           </div>
+          <div className="env-frame" aria-hidden="true" />
+          <Sparkles className="env-dust" />
           <div className="env-seal">
-            <Seal />
+            <div className="seal-half seal-l">
+              <Seal />
+            </div>
+            <div className="seal-half seal-r">
+              <Seal />
+            </div>
+            <span className="seal-sheen" />
           </div>
           <div className="env-hint">
             <span className="script">You are invited</span>
@@ -685,24 +787,38 @@ export default function RoyalInvite() {
             HERO
             ========================================================= */}
         <section className="hero">
-          <img className="hero-bg" src="/images/palace_night_hb.jpg" alt="" />
+          <div className="hero-media">
+            <img className="hero-bg" src="/images/palace_night_hb.jpg" alt="" />
+          </div>
           <div className="hero-shade" />
           <Dove className="dove-1" />
           <Dove className="dove-2" />
           <Dove className="dove-3" />
           <Petals />
-          <div className="hero-copy">
-            <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>
-            <p className="script hero-day">Wedding Day</p>
-            <p className="hero-date">24 · 11 · 2026</p>
-            <h1 className="hero-names">
-              <span className="hn-1">Harsh</span>
-              <span className="hn-amp">&amp;</span>
-              <span className="hn-2">Bharti</span>
-            </h1>
-            <p className="hero-place">New Delhi</p>
+          <div className="hero-copy-wrap">
+            <div className="hero-copy">
+              <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>
+              <p className="script hero-day">Wedding Day</p>
+              <p className="hero-date">
+                <i />
+                24 · 11 · 2026
+                <i />
+              </p>
+              <p className="hero-place">New Delhi</p>
+              <h1 className="hero-names">
+                <span className="hn-1">Harsh</span>
+                <span className="hn-amp">&amp;</span>
+                <span className="hn-2">Bharti</span>
+              </h1>
+            </div>
           </div>
-          <RoseBand items={BAND_HERO} className="rose-band-hero" />
+          <div className="hero-cue" aria-hidden="true">
+            <span>Scroll</span>
+            <i />
+          </div>
+          <div className="hero-roses">
+            <RoseBand items={BAND_HERO} className="rose-band-hero" />
+          </div>
         </section>
 
         {/* =========================================================
@@ -710,28 +826,29 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec wine">
           <Tear seed={1} tone="wine" />
-          <p className="shloka rv">
+          <Sparkles count={14} />
+          <p className="shloka rv rv-blur">
             वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।
             <br />
             निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
           </p>
-          <h2 className="script sec-title rv">Dear Friends &amp; Family,</h2>
-          <p className="body-copy rv">
+          <Title>Dear Friends &amp; Family,</Title>
+          <p className="body-copy rv rv-blur">
             With the divine grace of the Almighty and the heartfelt blessings of our elders, we request the
             honour of your gracious presence as we begin our forever.
           </p>
-          <div className="couple rv">
-            <div className="person">
+          <div className="couple">
+            <div className="person rv rv-l">
               <div className="person-name">Harsh Wadhera</div>
               <div className="person-parents">Son of Smt. Anita &amp; Sh. Rajesh Wadhera</div>
             </div>
-            <div className="script couple-with">with</div>
-            <div className="person">
+            <div className="script couple-with rv rv-z">with</div>
+            <div className="person rv rv-r">
               <div className="person-name">Bharti Sharma</div>
               <div className="person-parents">Daughter of Smt. Sunita &amp; Sh. Sunil Sharma</div>
             </div>
           </div>
-          <p className="body-copy rv">
+          <p className="body-copy rv rv-blur">
             Your love and support mean the world to us, and we would be honoured to have you by our side as we
             say &ldquo;forever.&rdquo;
           </p>
@@ -742,20 +859,22 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec paper">
           <Tear seed={2} tone="paper" />
-          <h2 className="script sec-title rv">The Celebration Begins In</h2>
+          <Title>The Celebration Begins In</Title>
           {countdown?.past ? (
             <p className="cd-done rv">Just married — thank you for your blessings!</p>
           ) : (
-            <div className="cd rv" aria-live="off">
+            <div className="cd rv rv-none" aria-live="off">
               {[
                 ["Days", countdown ? countdown.days : "—"],
                 ["Hours", countdown ? pad(countdown.hours) : "—"],
                 ["Minutes", countdown ? pad(countdown.minutes) : "—"],
                 ["Seconds", countdown ? pad(countdown.seconds) : "—"],
               ].map(([label, value], i) => (
-                <div key={label} className="cd-cell">
+                <div key={label} className="cd-cell" style={{ "--ci": i }}>
                   {i > 0 && <span className="cd-sep">:</span>}
-                  <span className="cd-num">{value}</span>
+                  <span className="cd-num" key={value}>
+                    {value}
+                  </span>
                   <span className="cd-label">{label}</span>
                 </div>
               ))}
@@ -772,7 +891,7 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec wine">
           <Tear seed={3} tone="wine" />
-          <h2 className="script sec-title rv">Schedule of Events</h2>
+          <Title>Schedule of Events</Title>
           <Schedule />
         </section>
 
@@ -781,7 +900,7 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec paper">
           <Tear seed={4} tone="paper" />
-          <h2 className="script sec-title rv">Location</h2>
+          <Title>Location</Title>
           <Venues />
         </section>
 
@@ -790,8 +909,8 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec wine">
           <Tear seed={5} tone="wine" />
-          <h2 className="script sec-title rv">Our Story</h2>
-          <div className="frames rv">
+          <Title>Our Story</Title>
+          <div className="frames rv rv-none">
             <figure className="frame frame-a">
               <img src="/images/couple_portrait_hb.jpg" alt="Harsh and Bharti" loading="lazy" />
             </figure>
@@ -800,19 +919,19 @@ export default function RoyalInvite() {
             </figure>
           </div>
           <div className="story">
-            <p className="body-copy rv">
+            <p className="body-copy rv rv-blur">
               Our journey began with a simple conversation that effortlessly turned into hours of shared
               laughter, quiet understandings, and an instant connection that felt like home.
             </p>
-            <p className="body-copy rv">
+            <p className="body-copy rv rv-blur">
               Between shared passions, spontaneous food runs across Delhi, and unconditional support through
               every high and low, we realised that the best adventures in life are the ones lived together.
             </p>
-            <p className="body-copy rv">
+            <p className="body-copy rv rv-blur">
               Harsh found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh
               her rock, partner-in-crime, and easiest source of joy.
             </p>
-            <p className="body-copy rv">
+            <p className="body-copy rv rv-blur">
               As we step into this sacred lifelong union, we cannot wait to celebrate surrounded by the warmth
               and blessings of our cherished family and friends.
             </p>
@@ -824,7 +943,7 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec paper">
           <Tear seed={6} tone="paper" />
-          <h2 className="script sec-title rv">With Love &amp; Blessings</h2>
+          <Title>With Love &amp; Blessings</Title>
           <div className="family">
             {[
               ["Grandparents", "Smt. & Sh. Wadhera · Smt. & Sh. Sharma"],
@@ -846,9 +965,9 @@ export default function RoyalInvite() {
             ========================================================= */}
         <section className="sec wine sec-rsvp">
           <Tear seed={7} tone="wine" />
-          <RoseBand items={BAND_RSVP} className="rose-band-rsvp" />
-          <h2 className="script sec-title rv">Confirm Your Attendance</h2>
-          <p className="body-copy rv">
+          <RoseBand items={BAND_RSVP} className="rose-band-rsvp rv rv-none" />
+          <Title>Confirm Your Attendance</Title>
+          <p className="body-copy rv rv-blur">
             To help us prepare for a joyful celebration, kindly confirm your attendance.
           </p>
 
@@ -912,7 +1031,8 @@ export default function RoyalInvite() {
             </form>
           )}
 
-          <div className="finale rv">
+          <div className="finale rv rv-none">
+            <Sparkles count={18} />
             <p className="script finale-hope">Hope to see you there!</p>
             <p className="finale-names">Harsh &amp; Bharti</p>
           </div>
@@ -932,7 +1052,7 @@ export default function RoyalInvite() {
           </div>
         </section>
 
-        <footer className="outro">
+        <footer className="outro rv rv-none">
           <img src="/images/couple_portrait_hb.jpg" alt="Harsh and Bharti" loading="lazy" />
           <div className="outro-fade" />
           <div className="outro-copy">
