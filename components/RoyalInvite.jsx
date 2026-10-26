@@ -116,27 +116,37 @@ const SEAL_OUTER = (() => {
 })();
 
 /* =========================================================
-   Embossed rose damask used on the envelope
+   Classic damask, embossed tone-on-tone on the envelope
    ========================================================= */
-const MOTIF = `
-  <path fill='FILL' d='M-22 4C-26-10-16-24 0-24C16-24 26-10 22 4C18 16 6 22 0 22C-6 22-18 16-22 4Z'/>
-  <path d='M-12-2C-12-12 0-16 8-10C14-5 12 4 4 6C-3 8-7 2-4-3C-1-7 5-6 5-2'/>
-  <path d='M-18 8C-10 16 10 16 18 8M-16-12C-8-20 8-20 16-12'/>
-  <path fill='FILL' d='M18 14C30 10 42 16 48 26C36 30 24 26 18 14Z'/>
-  <path fill='FILL' d='M-18 14C-30 10-42 16-48 26C-36 30-24 26-18 14Z'/>
-  <path d='M0 22C2 40-8 56-24 66M30-20C40-30 52-26 50-16C48-8 38-10 40-16M-30-20C-40-30-52-26-50-16C-48-8-38-10-40-16'/>`;
+// Right half of a Victorian damask medallion (mirrored to make the whole).
+// FILL marks the shapes that get a soft fill.
+const DAMASK_HALF = `
+  <path d='M0-50C12-44 28-32 31-14C34 6 24 22 10 31C5 34 2 39 0 44'/>
+  <path d='M0-50C5-56 6-62 2-70C1-72 0-74 0-76M0-60C3-63 3-67 0-70'/>
+  <path fill='FILL' d='M8-46C14-54 22-54 24-48C20-46 14-45 8-46Z'/>
+  <path d='M30-20C40-30 54-26 54-14C54-5 46-1 40-5C36-8 38-14 43-13'/>
+  <path fill='FILL' d='M38-24C44-38 56-40 62-34C56-30 48-26 38-24Z'/>
+  <path fill='FILL' d='M10 31C22 30 34 38 36 52C26 50 16 44 10 31Z'/>
+  <path d='M28 46C38 50 44 60 40 66C37 70 32 67 34 63'/>
+  <path fill='FILL' d='M0-30C8-28 16-20 16-10C16 0 8 6 0 14'/>
+  <path d='M0-20C4-18 7-13 6-8C5-4 2-2 0 0M20-40a2 2 0 1 0 .1 0M46 26a1.8 1.8 0 1 0 .1 0'/>`;
+
+const DAMASK_MOTIF = (fill) => {
+  const half = DAMASK_HALF.replaceAll("FILL", fill);
+  return `<g>${half}</g><g transform='scale(-1 1)'>${half}</g>`;
+};
 
 function damaskTile() {
+  // half-drop repeat: one medallion in the middle, quarters in the corners
+  const spots = ["60 85", "0 0", "120 0", "0 170", "120 170"];
   const layer = (dx, dy, stroke, fill) =>
-    `<g transform='translate(${dx} ${dy})' fill='none' stroke='${stroke}' stroke-width='1.5' stroke-linecap='round'>
-      <g transform='translate(42 44)'>${MOTIF.replaceAll("FILL", fill)}</g>
-      <g transform='translate(122 124) rotate(180) scale(.92)'>${MOTIF.replaceAll("FILL", fill)}</g>
-      <path d='M90 30C100 46 116 50 128 44M10 110C26 104 36 116 34 130'/>
+    `<g transform='translate(${dx} ${dy})' fill='none' stroke='${stroke}' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'>
+      ${spots.map((p) => `<g transform='translate(${p}) scale(.62)'>${DAMASK_MOTIF(fill)}</g>`).join("")}
     </g>`;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'>
-    ${layer(1, 1.2, "rgba(8,0,6,.42)", "rgba(8,0,6,.16)")}
-    ${layer(-0.7, -0.8, "rgba(255,190,225,.09)", "rgba(255,190,225,.03)")}
-    ${layer(0, 0, "rgba(116,44,90,.36)", "rgba(110,40,86,.16)")}
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='170' viewBox='0 0 120 170'>
+    ${layer(0.9, 1.1, "rgba(8,0,6,.45)", "rgba(8,0,6,.18)")}
+    ${layer(-0.6, -0.7, "rgba(255,214,170,.08)", "rgba(255,214,170,.025)")}
+    ${layer(0, 0, "rgba(128,52,100,.42)", "rgba(118,44,92,.2)")}
   </svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, " "))}")`;
 }
@@ -147,17 +157,15 @@ const GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
 
 const ROOT_STYLE = { "--damask": damaskTile(), "--grain": GRAIN };
 
-/* Glowing floral line art that draws itself onto the envelope */
-const SPRIG = [
-  "M0 50C-6 30 6 10 0-6",
-  "M-14-18C-16-30-6-38 0-38C8-38 16-30 14-18C12-10 4-6 0-6C-6-6-12-10-14-18Z",
-  "M-6-22C-6-30 4-32 7-26C9-21 4-16-1-18C-4-20-2-25 2-24",
-  "M0 20C10 12 22 14 28 22C18 28 8 26 0 20Z",
-  "M-1 6C-11-2-23 0-28 8C-18 14-8 12-1 6Z",
-  "M0 50C-14 56-24 48-20 40C-17 34-10 36-11 41",
-  "M2 34C14 40 22 34 18 28",
-  "M12-36C18-50 28-50 28-43C28-38 21-37 18-41",
-  "M-12-34C-20-46-30-44-29-37C-28-32-21-33-20-37",
+/* Gold filigree that draws itself into the envelope's corners (corner at 0,0) */
+const FILIGREE = [
+  "M4 4H40C48 4 52 8 52 14C52 19 47 21 44 18C42 15 45 12 47 14",
+  "M4 4V40C4 48 8 52 14 52C19 52 21 47 18 44C15 42 12 45 14 47",
+  "M4 4C14 14 20 20 24 28",
+  "M24 28C22 18 28 12 36 12C34 20 30 26 24 28Z",
+  "M24 28C18 26 12 30 12 36C20 34 26 30 24 28Z",
+  "M12 4C12 10 16 14 22 14M4 12C10 12 14 16 14 22",
+  "M30 31a2 2 0 1 0 .1 0",
 ];
 
 /* =========================================================
@@ -360,27 +368,31 @@ function Flourish() {
 /* =========================================================
    Wax seal
    ========================================================= */
+// Gold wax seal with the embossed HB monogram.
 function Seal() {
   return (
     <svg viewBox="-60 -60 120 120" className="seal-svg" aria-hidden="true">
       <defs>
-        <radialGradient id="seal-wax" cx="38%" cy="32%" r="75%">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.45" stopColor="#dfe4f6" />
-          <stop offset="1" stopColor="#9aa3c4" />
+        <radialGradient id="seal-wax" cx="36%" cy="30%" r="78%">
+          <stop offset="0" stopColor="#fff6d2" />
+          <stop offset="0.32" stopColor="#efcd82" />
+          <stop offset="0.68" stopColor="#c08d34" />
+          <stop offset="1" stopColor="#7d5419" />
         </radialGradient>
-        <radialGradient id="seal-well" cx="60%" cy="65%" r="80%">
-          <stop offset="0" stopColor="#f4f6ff" />
-          <stop offset="1" stopColor="#c3c9e2" />
+        <radialGradient id="seal-well" cx="62%" cy="66%" r="82%">
+          <stop offset="0" stopColor="#f7df9c" />
+          <stop offset="0.6" stopColor="#d3a54c" />
+          <stop offset="1" stopColor="#a87828" />
         </radialGradient>
       </defs>
       <path d={SEAL_OUTER} fill="url(#seal-wax)" />
       <circle r="37" fill="url(#seal-well)" />
-      <circle r="37.5" fill="none" stroke="#fff" strokeWidth="2" opacity="0.9" transform="translate(-0.8 -0.8)" />
-      <circle r="37.5" fill="none" stroke="#7d86ab" strokeWidth="1.6" opacity="0.55" transform="translate(0.8 0.9)" />
+      <circle r="37.5" fill="none" stroke="#fff3c6" strokeWidth="2" opacity="0.9" transform="translate(-0.8 -0.8)" />
+      <circle r="37.5" fill="none" stroke="#6b4512" strokeWidth="1.6" opacity="0.6" transform="translate(0.8 0.9)" />
+      <circle r="31" fill="none" stroke="#8a6020" strokeWidth=".8" opacity="0.45" strokeDasharray="1.5 3" />
       <g className="seal-mono">
-        <text x="-1" y="11" transform="translate(1 1.2)" fill="#ffffff">HB</text>
-        <text x="-1" y="11" fill="#8b93b8">HB</text>
+        <text x="-1" y="11" transform="translate(1 1.2)" fill="#fff2c0">HB</text>
+        <text x="-1" y="11" fill="#7a5214">HB</text>
       </g>
     </svg>
   );
@@ -699,13 +711,13 @@ export default function RoyalInvite() {
               </filter>
             </defs>
             {[
-              "translate(16 110) rotate(-6) scale(.4)",
-              "translate(84 110) rotate(6) scale(-.4 .4)",
-              "translate(50 182) scale(.38)",
-              "translate(50 30) rotate(180) scale(.3)",
+              "translate(6 9) scale(.3)",
+              "translate(94 9) scale(-.3 .3)",
+              "translate(6 207) scale(.3 -.3)",
+              "translate(94 207) scale(-.3 -.3)",
             ].map((t, gi) => (
               <g key={t} transform={t} filter="url(#glow)" className="env-sprig" style={{ "--gi": gi }}>
-                {SPRIG.map((d, i) => (
+                {FILIGREE.map((d, i) => (
                   <path key={i} d={d} pathLength="1" style={{ "--i": i }} />
                 ))}
               </g>
@@ -719,14 +731,14 @@ export default function RoyalInvite() {
           <div className="env-frame" aria-hidden="true" />
           <Sparkles className="env-dust" />
           <div className="env-seal">
-            <div className="seal-half seal-l">
-              <Seal />
-            </div>
-            <div className="seal-half seal-r">
-              <Seal />
-            </div>
+            <Seal />
             <span className="seal-sheen" />
           </div>
+          <span className="seal-dust" aria-hidden="true">
+            {Array.from({ length: 16 }, (_, i) => (
+              <i key={i} style={{ "--a": `${i * 22.5}deg`, "--r": `${70 + (i % 4) * 14}px` }} />
+            ))}
+          </span>
           <div className="env-hint">
             <span className="script">You are invited</span>
             <span className="env-hint-cta">Tap the seal to open</span>
