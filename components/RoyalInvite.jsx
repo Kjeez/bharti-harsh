@@ -9,7 +9,7 @@ const WEDDING_TARGET_ISO = "2026-11-24T18:00:00+05:30";
 
 const CALENDAR_URL =
   "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-  "&text=" + encodeURIComponent("Harsh & Bharti — Wedding Ceremony") +
+  "&text=" + encodeURIComponent("Bharti & Harsh — Wedding Ceremony") +
   "&dates=20261124T123000Z/20261124T183000Z" +
   "&location=" + encodeURIComponent("Radisson Blu Hotel, Plot 4, Sector 13, Dwarka, New Delhi 110075");
 
@@ -308,12 +308,20 @@ function Title({ children }) {
   );
 }
 
-/* Hand-drawn journey: Himachal hills, Delhi's monuments, Punjab's wheat (viewBox 0 0 400 300) */
+/* Hand-drawn journey: Himachal hills, Shri Ram Mandir, Punjab's wheat (viewBox 0 0 400 300) */
 const SKY_FILL = [
-  "M42 262V254H48L56 70H57V63Q62 55 67 63V70H68L76 254H82V262Z",
-  "M116 262V232H140V170H143V160Q152 146 161 160V170H166V150C156 118 176 92 200 88C224 92 244 118 234 150V170H239V160Q248 146 257 160V170H260V232H284V262Z",
-  "M302 262V256H306V150H302V150H308V128H314V121H322Q335 106 348 121H356V128H362V150H368H364V256H368V262Z",
+  // plinth, pillared ground floor and upper storey
+  "M64 262V250H76V240H92V203H84L92 197H104V180H98L106 175H294L302 180H296V197H308L316 203H308V240H324V250H336V262Z",
+  // main shikhara with its attached half-spires
+  "M150 175C150 150 156 132 166 120H171C174 98 182 76 192 58H208C218 76 226 98 229 120H234C244 132 250 150 250 175Z",
+  // stepped roofs over the halls
+  "M106 175L126 140H146L166 175Z",
+  "M234 175L254 140H274L294 175Z",
+  // corner spires
+  "M88 197C88 184 91 174 94 168H98C101 174 104 184 104 197Z",
+  "M296 197C296 184 299 174 302 168H306C309 174 312 184 312 197Z",
 ];
+const SKY_FLAG = "M200 22L216 27L200 32Z";
 
 const SKYLINE = (() => {
   const far = [];
@@ -329,54 +337,80 @@ const SKYLINE = (() => {
     const t = (dx, dy) => `${(x + dx * k).toFixed(1)} ${(262 - dy * k).toFixed(1)}`;
     near.push(`M${t(0, 0)}L${t(0, 10)}M${t(-10, 10)}L${t(10, 10)}L${t(4, 19)}L${t(8, 19)}L${t(3, 28)}L${t(6, 28)}L${t(0, 40)}L${t(-6, 28)}L${t(-3, 28)}L${t(-8, 19)}L${t(-4, 19)}L${t(-10, 10)}`);
   });
-  // Qutub Minar
-  near.push("M42 262V254H82V262", "M48 254L56 70", "M76 254L68 70", "M55 254L59.5 72", "M69 254L64.5 72");
-  [[205, 15], [150, 12.5], [108, 10.5], [82, 9]].forEach(([y, w]) => {
-    let z = `M${62 - w + 1} ${y}`;
-    for (let x = 62 - w + 1; x < 62 + w - 2; x += 3) z += "l1.5 3.5l1.5-3.5";
-    near.push(`M${62 - w} ${y}H${62 + w}`, z);
-  });
-  near.push("M57 70V63Q62 55 67 63V70", "M62 56V47");
-  // cypresses either side of the tomb
-  [[100, 1], [110, 0.72], [290, 0.85]].forEach(([x, k]) => {
+  // cypresses at the temple's corners
+  [[50, 0.9], [350, 0.9]].forEach(([x, k]) => {
     const b = 262 - 12 * k;
     near.push(`M${x} 262V${b}C${x - 8 * k} ${262 - 24 * k} ${x - 6 * k} ${262 - 44 * k} ${x} ${262 - 58 * k}C${x + 6 * k} ${262 - 44 * k} ${x + 8 * k} ${262 - 24 * k} ${x} ${b}`);
   });
-  // Humayun's Tomb
-  near.push("M116 262V232H284V262");
-  for (let x = 122; x < 276; x += 16) near.push(`M${x} 262V249Q${x} 241 ${x + 5} 239Q${x + 10} 241 ${x + 10} 249V262`);
+
+  // Shri Ram Mandir — plinth
+  near.push("M64 262V250H336V262M64 256H336", "M76 250V240H324V250M76 245H324");
+  // grand front steps
+  let steps = "M176 262L182 240M224 262L218 240";
+  for (let y = 258; y > 240; y -= 4) {
+    const inset = ((262 - y) / 22) * 6;
+    steps += `M${f(176 + inset)} ${y}H${f(224 - inset)}`;
+  }
+  near.push(steps);
+  // ground floor: pillared bays with cusped arches, and the arched doorway
+  near.push("M92 240V203H308V240");
+  for (const side of [-1, 1]) {
+    let bays = "";
+    for (let k = 0; k < 6; k++) {
+      const x = side < 0 ? 100 + k * 12 : 300 - k * 12;
+      bays += `M${x} 240V206`;
+      if (k < 5) {
+        const x2 = x + side * 12;
+        bays += `M${x} 214Q${(x + x2) / 2} 206 ${x2} 214`;
+      }
+    }
+    near.push(bays);
+  }
   near.push(
-    "M140 232V170H260V232",
-    "M176 232V160H224V232",
-    "M182 232V190Q182 172 200 164Q218 172 218 190V232",
-    "M190 232V199Q190 187 200 183Q210 187 210 199V232"
+    "M172 240V206M228 240V206",
+    "M180 240V218Q180 204 200 198Q220 204 220 218V240",
+    "M188 240V222Q188 212 200 208Q212 212 212 222V240",
+    "M84 203L92 197H308L316 203"
   );
-  [150, 232].forEach((x) =>
+  // upper storey with its own eave
+  let upper = "M104 197V180H296V197";
+  for (let x = 112; x <= 288; x += 12) upper += `M${x} 197V184`;
+  near.push(upper, "M98 180L106 175H294L302 180");
+  // stepped roofs over the side halls, each topped with an amalaka and kalash
+  for (const cx of [136, 264]) {
+    let roof = "";
+    for (let k = 0; k < 5; k++) {
+      const y = 175 - k * 7;
+      const hw = 30 - k * 5;
+      roof += `M${cx - hw} ${y}L${cx - hw + 3} ${y - 7}H${cx + hw - 3}L${cx + hw} ${y}`;
+    }
+    near.push(roof, `M${cx - 6} 140Q${cx} 133 ${cx + 6} 140ZM${cx - 2} 133Q${cx} 128 ${cx + 2} 133M${cx} 128V123`);
+  }
+  // corner spires
+  for (const cx of [96, 304]) {
     near.push(
-      `M${x} 228V214Q${x} 206 ${x + 9} 203Q${x + 18} 206 ${x + 18} 214V228`,
-      `M${x} 198V188Q${x} 181 ${x + 9} 178Q${x + 18} 181 ${x + 18} 188V198`
-    )
-  );
-  near.push("M168 170V150H232V170");
-  [152, 248].forEach((x) => near.push(`M${x - 6} 170V160M${x + 6} 170V160M${x - 9} 160H${x + 9}`, `M${x - 8} 160Q${x} 146 ${x + 8} 160M${x} 149V142`));
+      `M${cx - 8} 197C${cx - 8} 184 ${cx - 5} 174 ${cx - 2} 168M${cx + 8} 197C${cx + 8} 184 ${cx + 5} 174 ${cx + 2} 168`,
+      `M${cx - 7} 189H${cx + 7}M${cx - 6} 181H${cx + 6}M${cx - 4} 174H${cx + 4}M${cx - 3} 168Q${cx} 164 ${cx + 3} 168M${cx} 164V158`
+    );
+  }
+  // half-spires hugging the main shikhara
   near.push(
-    "M166 150C156 118 176 92 200 88C224 92 244 118 234 150",
-    "M186 150C181 124 189 102 200 88M214 150C219 124 211 102 200 88",
-    "M200 88V64",
-    "M197 79a3 3 0 1 0 6 0a3 3 0 1 0-6 0M198 71a2 2 0 1 0 4 0a2 2 0 1 0-4 0"
+    "M150 175C150 150 156 132 166 120M250 175C250 150 244 132 234 120",
+    "M164 120Q166 114 168 120M232 120Q234 114 236 120",
+    "M152 158H170M151 142H172M155 128H174M248 158H230M249 142H228M245 128H226"
   );
-  // charbagh water channel
-  near.push("M184 300L195 262M216 300L205 262", "M190 286H210M193 274H207");
-  // India Gate
-  near.push(
-    "M302 262V256H368V262",
-    "M306 256V150H364V256",
-    "M322 256V196Q322 176 335 172Q348 176 348 196V256",
-    "M312 256V158M358 256V158",
-    "M302 150H368M308 150V128H362V150",
-    "M315 141H355M319 136H351",
-    "M314 128V121H356V128M322 121Q335 106 348 121"
-  );
+  // main shikhara: curved outline, ribs, horizontal tiers, amalaka, kalash and flagpole
+  near.push("M162 175C162 128 174 88 192 58M238 175C238 128 226 88 208 58");
+  near.push("M184 175C184 130 190 92 196 60M216 175C216 130 210 92 204 60");
+  let tiers = "";
+  for (const y of [160, 146, 132, 118, 104, 90, 76]) {
+    const t = (175 - y) / 117;
+    const hw = 38 - 30 * t ** 1.6;
+    tiers += `M${f(200 - hw)} ${y}H${f(200 + hw)}`;
+  }
+  near.push(tiers);
+  near.push("M190 58Q200 49 210 58ZM192 58H208", "M196 49Q195 43 200 41Q205 43 204 49Z", "M200 41V20", SKY_FLAG);
+
   // Punjab: wheat on the right
   [[382, 0], [392, 4]].forEach(([x, lean]) => {
     near.push(`M${x} 262C${x} 250 ${x + lean / 2} 240 ${x + lean + 4} 228`);
@@ -417,6 +451,7 @@ function Skyline() {
           <path key={d} d={d} />
         ))}
       </g>
+      <path className="sk-flag" d={SKY_FLAG} />
       <g className="sk-near" filter="url(#sk-ink)">
         <g className="sk-ghost" transform="translate(.7 .6)">
           {SKYLINE.near.map((d, k) => draw(d, `g${k}`, far + k))}
@@ -707,7 +742,7 @@ function Stamp() {
   );
 }
 
-// Heart-shaped gold wax seal with the embossed HB monogram.
+// Heart-shaped gold wax seal with the embossed BH monogram.
 function Seal() {
   return (
     <svg viewBox="-60 -60 120 120" className="seal-svg" aria-hidden="true">
@@ -738,8 +773,8 @@ function Seal() {
       <path d={SEAL_INNER} fill="none" stroke="#6b4512" strokeWidth="1.6" opacity="0.6" transform="translate(0.8 0.9)" />
       <path d={SEAL_RING} fill="none" stroke="#8a6020" strokeWidth=".8" opacity="0.45" strokeDasharray="1.5 3" />
       <g className="seal-mono">
-        <text x="-1" y="7" transform="translate(1 1.2)" fill="#fff2c0">HB</text>
-        <text x="-1" y="7" fill="#7a5214">HB</text>
+        <text x="-1" y="7" transform="translate(1 1.2)" fill="#fff2c0">BH</text>
+        <text x="-1" y="7" fill="#7a5214">BH</text>
       </g>
       <g clipPath="url(#seal-clip)">
         <rect className="seal-shine" x="-90" y="-60" width="36" height="120" fill="url(#seal-shine-g)" />
@@ -1066,7 +1101,7 @@ export default function RoyalInvite() {
               {/* address side */}
               <div className="lt-face lt-front">
                 <div className="lt-from">
-                  Harsh &amp; Bharti
+                  Bharti &amp; Harsh
                   <br />
                   New Delhi
                 </div>
@@ -1091,7 +1126,7 @@ export default function RoyalInvite() {
                   <div className="lt-card-inside">
                     <span className="lt-kicker">॥ श्री गणेशाय नमः ॥</span>
                     <span className="lt-sub">Together with their families</span>
-                    <span className="script lt-names">Harsh &amp; Bharti</span>
+                    <span className="script lt-names">Bharti &amp; Harsh</span>
                     <span className="lt-invite">
                       request the pleasure of your company
                       <br />
@@ -1103,11 +1138,11 @@ export default function RoyalInvite() {
                     <div className="lt-cover-face lt-cover-front">
                       <span className="lt-cover-kicker">Wedding Invitation</span>
                       <span className="script lt-cover-mono">
-                        H
+                        B
                         <svg viewBox="-8 -8 16 14" aria-hidden="true">
                           <path d={HEART} />
                         </svg>
-                        B
+                        H
                       </span>
                       <span className="lt-cover-date">24 · 11 · 2026</span>
                     </div>
@@ -1175,9 +1210,9 @@ export default function RoyalInvite() {
               <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>
               <p className="hero-pre">The wedding of</p>
               <h1 className="hero-names">
-                <span className="hn-1">Harsh</span>
+                <span className="hn-1">Bharti</span>
                 <span className="hn-amp">&amp;</span>
-                <span className="hn-2">Bharti</span>
+                <span className="hn-2">Harsh</span>
               </h1>
               <p className="hero-date">
                 <i />
@@ -1227,15 +1262,15 @@ export default function RoyalInvite() {
           </p>
           <div className="couple">
             <div className="person rv rv-l">
-              <div className="person-from">Punjab</div>
-              <div className="person-name">Harsh Wadhera</div>
-              <div className="person-parents">Son of Smt. Anita &amp; Sh. Rajesh Wadhera</div>
-            </div>
-            <div className="script couple-with rv rv-z">with</div>
-            <div className="person rv rv-r">
               <div className="person-from">Himachal Pradesh</div>
               <div className="person-name">Bharti Sharma</div>
               <div className="person-parents">Daughter of Smt. Sunita &amp; Sh. Sunil Sharma</div>
+            </div>
+            <div className="script couple-with rv rv-z">with</div>
+            <div className="person rv rv-r">
+              <div className="person-from">Punjab</div>
+              <div className="person-name">Harsh Wadhera</div>
+              <div className="person-parents">Son of Smt. Anita &amp; Sh. Rajesh Wadhera</div>
             </div>
           </div>
           <p className="body-copy rv rv-blur">
@@ -1303,7 +1338,7 @@ export default function RoyalInvite() {
           <Title>Our Story</Title>
           <div className="frames rv rv-none">
             <figure className="frame frame-a">
-              <img src="/images/couple_portrait_hb.jpg" alt="Harsh and Bharti" loading="lazy" />
+              <img src="/images/couple_portrait_hb.jpg" alt="Bharti and Harsh" loading="lazy" />
             </figure>
             <figure className="frame frame-b">
               <img src="/images/event_wedding_hb.jpg" alt="The wedding mandap" loading="lazy" />
@@ -1324,9 +1359,9 @@ export default function RoyalInvite() {
           <Title>With Love &amp; Blessings</Title>
           <div className="family">
             {[
-              ["Grandparents", "Smt. & Sh. Wadhera · Smt. & Sh. Sharma"],
-              ["Parents", "Anita & Rajesh Wadhera\nSunita & Sunil Sharma"],
-              ["Family & Relatives", "Wadhera & Sharma Parivar"],
+              ["Grandparents", "Smt. & Sh. Sharma · Smt. & Sh. Wadhera"],
+              ["Parents", "Sunita & Sunil Sharma\nAnita & Rajesh Wadhera"],
+              ["Family & Relatives", "Sharma & Wadhera Parivar"],
               ["With Best Compliments", "All Near & Dear Ones"],
             ].map(([role, names], i) => (
               <div key={role} className="family-group rv">
@@ -1398,7 +1433,7 @@ export default function RoyalInvite() {
                 <span>Wishes for the couple</span>
                 <textarea
                   rows={3}
-                  placeholder="Write your blessings for Harsh & Bharti…"
+                  placeholder="Write your blessings for Bharti & Harsh…"
                   value={rsvp.message}
                   onChange={(e) => setRsvp({ ...rsvp, message: e.target.value })}
                 />
@@ -1413,26 +1448,26 @@ export default function RoyalInvite() {
             <Sparkles count={18} />
             <p className="script finale-hope">Tuhaadi udeek rahegi</p>
             <p className="finale-en">We&rsquo;ll be waiting for you</p>
-            <p className="finale-names">Harsh &amp; Bharti</p>
+            <p className="finale-names">Bharti &amp; Harsh</p>
           </div>
 
           <div className="contacts rv">
             <div className="contacts-title">For any assistance</div>
-            <a href="tel:+919810012345" className="contact">
-              <Phone size={13} />
-              <span>Rajesh Wadhera</span>
-              <b>+91 98100 12345</b>
-            </a>
             <a href="tel:+919811154321" className="contact">
               <Phone size={13} />
               <span>Sunil Sharma</span>
               <b>+91 98111 54321</b>
             </a>
+            <a href="tel:+919810012345" className="contact">
+              <Phone size={13} />
+              <span>Rajesh Wadhera</span>
+              <b>+91 98100 12345</b>
+            </a>
           </div>
         </section>
 
         <footer className="outro rv rv-none">
-          <img src="/images/couple_portrait_hb.jpg" alt="Harsh and Bharti" loading="lazy" />
+          <img src="/images/couple_portrait_hb.jpg" alt="Bharti and Harsh" loading="lazy" />
           <div className="outro-fade" />
           <div className="outro-copy">
             <span className="script">Forever begins</span>

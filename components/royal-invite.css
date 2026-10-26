@@ -1,5 +1,5 @@
 /* =========================================================
-   Harsh & Bharti — envelope invitation
+   Bharti & Harsh — envelope invitation
    ========================================================= */
 .inv {
   --wine: #5b0b1f;
@@ -1443,7 +1443,7 @@ html.inv-locked body {
   width: 100%;
   height: 126%;
   object-fit: cover;
-  object-position: 52% 50%;
+  object-position: 44% 50%;
   filter: saturate(1.05) brightness(0.95);
   transform: scale(1.06);
   transition: transform 6s cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -1532,31 +1532,25 @@ html.inv-locked body {
 .revealed .sk-fill path {
   opacity: 1;
 }
+/* saffron dhwaja on the temple spire */
+.sk-flag {
+  fill: #ec8a2e;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 0 50%;
+  transition: opacity 1s ease 3.2s;
+  animation: flagWave 1.8s ease-in-out infinite alternate;
+}
+.revealed .sk-flag {
+  opacity: 0.95;
+}
+@keyframes flagWave {
+  from { transform: scaleX(1) skewY(0deg); }
+  to { transform: scaleX(0.88) skewY(-7deg); }
+}
 .revealed .sk-far path,
 .revealed .sk-near path {
   stroke-dashoffset: 0;
-}
-.hero-route {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  font-family: "Cinzel", serif;
-  font-size: 9.5px;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: #e9cf9a;
-  opacity: 0;
-  transition: opacity 1.2s ease 3.6s;
-}
-.hero-route i {
-  width: 4px;
-  height: 4px;
-  background: #e9cf9a;
-  transform: rotate(45deg);
-}
-.revealed .hero-route {
-  opacity: 0.9;
 }
 .hero-cue {
   bottom: 24px;
@@ -2426,4 +2420,60 @@ html.inv-locked body {
   .seal-shine {
     animation: none;
   }
+}
+
+/* Hero layout: the text sits at the top and the temple drawing takes only the
+   space left above the scroll button, so the two never overlap on short phones. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 112px;
+}
+.hero-copy-wrap {
+  position: relative;
+  inset: auto;
+  flex: none;
+}
+.hero-copy {
+  position: relative;
+  top: auto;
+  padding-top: max(10svh, 86px);
+}
+.hero-art {
+  position: relative;
+  bottom: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+.skyline {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+  max-height: 300px;
+}
+/* place line under the drawing, never on it */
+.hero-route {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-family: "Cinzel", serif;
+  font-size: 9.5px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #e9cf9a;
+  opacity: 0;
+  transition: opacity 1.2s ease 3.6s;
+}
+.hero-route i {
+  width: 4px;
+  height: 4px;
+  background: #e9cf9a;
+  transform: rotate(45deg);
+}
+.revealed .hero-route {
+  opacity: 0.9;
 }
