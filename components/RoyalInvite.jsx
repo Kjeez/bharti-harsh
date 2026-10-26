@@ -1193,7 +1193,7 @@ export default function RoyalInvite() {
             </div>
           </div>
           <div className="env-hint">
-            <span className="script">A love letter, just for you</span>
+            <span className="script">A wedding invitation</span>
             <span className="env-hint-cta">Tap the heart to open</span>
           </div>
         </div>
@@ -1362,7 +1362,7 @@ export default function RoyalInvite() {
                 "Grandparents",
                 "Late Smt. Harbans Kaur & Late Sh. Joginder Singh\nSmt. Sumitra Devi & Late Sh. Ram Ji Das",
               ],
-              ["Parents", "Pushpa & Rajesh Sharma\nJasvinder Kaur & Dr. Harbhajan Singh"],
+              ["Parents", "Jasvinder Kaur & Dr. Harbhajan Singh\nPushpa & Rajesh Sharma"],
               ["Family & Relatives", "Sharma & Saib Parivar"],
               ["With Best Compliments", "All Near & Dear Ones"],
             ].map(([role, names], i) => (
