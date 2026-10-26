@@ -361,12 +361,31 @@ html.inv-locked body {
 .pill-light:hover { background-position: 100% 0; }
 
 /* Invitation letter */
+/* Gurbani and the Ganesh shloka, stacked with a small gold divider */
+.blessings {
+  margin-bottom: 26px;
+}
+.gurbani,
 .shloka {
-  font-family: "Tiro Devanagari Sanskrit", serif;
   font-size: 14.5px;
   line-height: 1.9;
   color: #ecc98f;
-  margin-bottom: 26px;
+}
+.gurbani {
+  font-family: "Noto Serif Gurmukhi", serif;
+  font-size: 15.5px;
+}
+.shloka {
+  font-family: "Tiro Devanagari Sanskrit", serif;
+}
+.blessings-sep {
+  display: block;
+  width: 70px;
+  height: 9px;
+  margin: 10px auto;
+  background:
+    linear-gradient(45deg, transparent 42%, #ecc98f 42% 58%, transparent 58%) center / 9px 9px no-repeat,
+    linear-gradient(90deg, transparent, rgba(236, 201, 143, 0.7) 40%, transparent 40% 60%, rgba(236, 201, 143, 0.7) 60%, transparent) center / 100% 1px no-repeat;
 }
 .couple {
   margin: 28px auto 30px;
@@ -382,6 +401,7 @@ html.inv-locked body {
   font-size: 16.5px;
   color: #e3c2c4;
   margin-top: 4px;
+  text-wrap: balance;
 }
 .couple-with {
   font-size: 32px;
@@ -1631,27 +1651,6 @@ html.inv-locked body {
   }
 }
 
-/* Where they come from */
-.person-from {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 4px;
-  font-family: "Cinzel", serif;
-  font-size: 9.5px;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: var(--champagne);
-}
-.person-from::before,
-.person-from::after {
-  content: "";
-  width: 16px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.6;
-}
 .punjabi-line {
   font-size: 31px;
   color: var(--champagne);

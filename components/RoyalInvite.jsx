@@ -584,7 +584,7 @@ const STORY = [
   {
     icon: "hearts",
     title: "Finding home",
-    text: "Harsh Saab found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh her rock, partner-in-crime and easiest source of joy.",
+    text: "Harsh Saib found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh her rock, partner-in-crime and easiest source of joy.",
   },
   {
     icon: "rings",
@@ -1250,11 +1250,19 @@ export default function RoyalInvite() {
         <section className="sec wine">
           <Band kind="phulkari" />
           <Sparkles count={14} />
-          <p className="shloka rv rv-blur">
-            वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।
-            <br />
-            निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
-          </p>
+          <div className="blessings rv rv-blur">
+            <p className="gurbani" lang="pa">
+              ਗੁਰੁ ਪੂਰਾ ਆਰਾਧੇ ॥ ਕਾਰਜ ਸਗਲੇ ਸਾਧੇ ॥
+              <br />
+              ਸਗਲ ਮਨੋਰਥ ਪੂਰੇ ॥ ਬਾਜੇ ਅਨਹਦ ਤੂਰੇ ॥੧॥
+            </p>
+            <span className="blessings-sep" aria-hidden="true" />
+            <p className="shloka" lang="sa">
+              वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।
+              <br />
+              निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
+            </p>
+          </div>
           <Title>Dear Friends &amp; Family,</Title>
           <p className="body-copy rv rv-blur">
             With the divine grace of the Almighty and the heartfelt blessings of our elders, we request the
@@ -1262,15 +1270,13 @@ export default function RoyalInvite() {
           </p>
           <div className="couple">
             <div className="person rv rv-l">
-              <div className="person-from">Himachal Pradesh</div>
               <div className="person-name">Bharti Sharma</div>
-              <div className="person-parents">Daughter of Smt. Sunita &amp; Sh. Sunil Sharma</div>
+              <div className="person-parents">Daughter of Smt. Raveena Sharma &amp; Sh. Rajesh Sharma</div>
             </div>
             <div className="script couple-with rv rv-z">with</div>
             <div className="person rv rv-r">
-              <div className="person-from">Punjab</div>
-              <div className="person-name">Harsh Wadhera</div>
-              <div className="person-parents">Son of Smt. Anita &amp; Sh. Rajesh Wadhera</div>
+              <div className="person-name">Harsh Saib</div>
+              <div className="person-parents">Son of Smt. Jasvinder Kaur &amp; Dr. Harbhajan Singh</div>
             </div>
           </div>
           <p className="body-copy rv rv-blur">
@@ -1360,7 +1366,7 @@ export default function RoyalInvite() {
           <div className="family">
             {[
               ["Grandparents", "Smt. & Sh. Sharma · Smt. & Sh. Wadhera"],
-              ["Parents", "Sunita & Sunil Sharma\nAnita & Rajesh Wadhera"],
+              ["Parents", "Raveena & Rajesh Sharma\nJasvinder Kaur & Dr. Harbhajan Singh"],
               ["Family & Relatives", "Sharma & Wadhera Parivar"],
               ["With Best Compliments", "All Near & Dear Ones"],
             ].map(([role, names], i) => (
