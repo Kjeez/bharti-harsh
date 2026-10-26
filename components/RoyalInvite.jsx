@@ -81,19 +81,6 @@ function rng(seed) {
 }
 const f = (n) => n.toFixed(1);
 
-function tornPath(seed, lift = 0) {
-  const r = rng(seed);
-  const ph = r() * 6.28;
-  const ph2 = r() * 6.28;
-  const yAt = (x) => 17 - lift + Math.sin(x / 38 + ph) * 4 + Math.sin(x / 13 + ph2) * 1.6 + (r() - 0.5) * 4.4;
-  let d = `M0 34 L0 ${f(yAt(0))}`;
-  for (let x = 0; x < 400; ) {
-    x = Math.min(400, x + 2 + r() * 6);
-    d += ` L${f(x)} ${f(yAt(x))}`;
-  }
-  return d + " L400 34 Z";
-}
-
 function smoothClosed(pts) {
   const N = pts.length;
   let d = `M${f(pts[0][0])} ${f(pts[0][1])}`;
@@ -104,16 +91,23 @@ function smoothClosed(pts) {
   return d + "Z";
 }
 
-const SEAL_OUTER = (() => {
-  const r = rng(11);
+// Heart-shaped wax seal: the classic heart curve, with a little melted-wax wobble on the outer edge.
+function heartPath(scale, wobble, seed) {
+  const r = rng(seed);
   const pts = [];
-  for (let i = 0; i < 34; i++) {
-    const a = (i / 34) * Math.PI * 2;
-    const rad = 52 + Math.sin(a * 7 + 1) * 2.2 + (r() - 0.5) * 4;
-    pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+  for (let i = 0; i < 44; i++) {
+    const t = (i / 44) * Math.PI * 2;
+    const k = 1 + (wobble ? Math.sin(t * 9 + 1) * 0.022 + (r() - 0.5) * 0.03 : 0);
+    const x = 16 * Math.sin(t) ** 3;
+    const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) - 2.5;
+    pts.push([x * scale * k, y * scale * k]);
   }
   return smoothClosed(pts);
-})();
+}
+const SEAL_OUTER = heartPath(3.25, true, 11);
+const SEAL_INNER = heartPath(2.35, false, 0);
+const SEAL_RING = heartPath(2.0, false, 0);
+const HEART = "M0 5C-4 2.5-7 0-7-3C-7-5.5-5-7-3-7C-1.5-7-.5-6 0-5C.5-6 1.5-7 3-7C5-7 7-5.5 7-3C7 0 4 2.5 0 5Z";
 
 /* =========================================================
    Classic damask, embossed tone-on-tone on the envelope
@@ -155,7 +149,12 @@ const GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .25  0 0 0 0 .1  0 0 0 0 .12  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>"
 )}")`;
 
-const ROOT_STYLE = { "--damask": damaskTile(), "--grain": GRAIN };
+const LINER_HEART = "C3.5 7.2 2 6 2 4.5C2 3.3 3 2.5 4 2.5C4.7 2.5 5.2 2.9 5.5 3.4C5.8 2.9 6.3 2.5 7 2.5C8 2.5 9 3.3 9 4.5C9 6 7.5 7.2 5.5 8.5Z";
+const LINER = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><rect width='22' height='22' fill='#f4e4c1'/><path d='M5.5 8.5${LINER_HEART}' fill='#c99a45' opacity='.5'/><path d='M16.5 19.5${LINER_HEART}' transform='translate(11 11)' fill='#c99a45' opacity='.5'/></svg>`
+)}")`;
+
+const ROOT_STYLE = { "--damask": damaskTile(), "--grain": GRAIN, "--liner": LINER };
 
 /* Gold filigree that draws itself into the envelope's corners (corner at 0,0) */
 const FILIGREE = [
@@ -273,44 +272,6 @@ function Lotus({ className = "" }) {
   );
 }
 
-function Dove({ className }) {
-  return (
-    <svg className={`dove ${className}`} viewBox="-40 -32 80 52" aria-hidden="true">
-      <path className="dove-wing dove-wing-far" d="M6 2C2-10-6-22-18-30C-6-29 8-19 16-2Z" />
-      <path d="M-30 6C-22 2-10 0 2 2C10 3 16 0 22-4C25-6 29-6 31-3C32-1 34 0 37 0C34 2 31 3 29 5C24 11 12 14 0 13C-10 12-20 10-26 12L-37 17C-35 12-33 9-30 6Z" fill="#fdfbff" />
-      <path className="dove-wing" d="M2 4C-2-8-12-21-30-28C-12-28 6-17 14 2Z" />
-      <circle cx="27" cy="-3" r="0.9" fill="#3a2a40" />
-    </svg>
-  );
-}
-
-const PETALS = (() => {
-  const r = rng(42);
-  return Array.from({ length: 16 }, () => ({
-    x: f(r() * 100),
-    d: f(9 + r() * 8),
-    delay: f(-r() * 16),
-    s: f(0.6 + r() * 0.7),
-    tone: r() > 0.45 ? "red" : "white",
-  }));
-})();
-
-function Petals() {
-  return (
-    <div className="petals" aria-hidden="true">
-      {PETALS.map((p, i) => (
-        <span
-          key={i}
-          className={`petal petal-${p.tone}`}
-          style={{ "--x": `${p.x}%`, "--d": `${p.d}s`, "--delay": `${p.delay}s`, "--s": p.s }}
-        >
-          <i />
-        </span>
-      ))}
-    </div>
-  );
-}
-
 const SPARKS = (() => {
   const r = rng(77);
   return Array.from({ length: 26 }, () => ({
@@ -347,12 +308,295 @@ function Title({ children }) {
   );
 }
 
-function Tear({ seed, tone }) {
+/* Hand-drawn journey: Himachal hills, Delhi's monuments, Punjab's wheat (viewBox 0 0 400 300) */
+const SKY_FILL = [
+  "M42 262V254H48L56 70H57V63Q62 55 67 63V70H68L76 254H82V262Z",
+  "M116 262V232H140V170H143V160Q152 146 161 160V170H166V150C156 118 176 92 200 88C224 92 244 118 234 150V170H239V160Q248 146 257 160V170H260V232H284V262Z",
+  "M302 262V256H306V150H302V150H308V128H314V121H322Q335 106 348 121H356V128H362V150H368H364V256H368V262Z",
+];
+
+const SKYLINE = (() => {
+  const far = [];
+  const near = [];
+  // Dhauladhar range behind everything, with snow hatching on the peaks
+  const peaks = [[50, 150], [84, 128], [132, 170], [228, 150], [270, 126], [350, 146]];
+  far.push("M0 196L18 178L30 186L50 150L64 162L84 128L100 146L112 138L132 170L150 160L170 178L200 168L228 150L246 162L270 126L288 150L306 140L326 166L350 146L372 160L400 136");
+  peaks.forEach(([x, y]) => far.push(`M${x - 7} ${y + 9}L${x - 3} ${y + 4}M${x + 2} ${y + 5}L${x + 6} ${y + 10}M${x - 2} ${y + 11}L${x + 1} ${y + 8}`));
+
+  near.push("M0 262C60 258 120 265 200 262S340 258 400 263");
+  // Himachal: deodars on the left
+  [[12, 1], [28, 0.78]].forEach(([x, k]) => {
+    const t = (dx, dy) => `${(x + dx * k).toFixed(1)} ${(262 - dy * k).toFixed(1)}`;
+    near.push(`M${t(0, 0)}L${t(0, 10)}M${t(-10, 10)}L${t(10, 10)}L${t(4, 19)}L${t(8, 19)}L${t(3, 28)}L${t(6, 28)}L${t(0, 40)}L${t(-6, 28)}L${t(-3, 28)}L${t(-8, 19)}L${t(-4, 19)}L${t(-10, 10)}`);
+  });
+  // Qutub Minar
+  near.push("M42 262V254H82V262", "M48 254L56 70", "M76 254L68 70", "M55 254L59.5 72", "M69 254L64.5 72");
+  [[205, 15], [150, 12.5], [108, 10.5], [82, 9]].forEach(([y, w]) => {
+    let z = `M${62 - w + 1} ${y}`;
+    for (let x = 62 - w + 1; x < 62 + w - 2; x += 3) z += "l1.5 3.5l1.5-3.5";
+    near.push(`M${62 - w} ${y}H${62 + w}`, z);
+  });
+  near.push("M57 70V63Q62 55 67 63V70", "M62 56V47");
+  // cypresses either side of the tomb
+  [[100, 1], [110, 0.72], [290, 0.85]].forEach(([x, k]) => {
+    const b = 262 - 12 * k;
+    near.push(`M${x} 262V${b}C${x - 8 * k} ${262 - 24 * k} ${x - 6 * k} ${262 - 44 * k} ${x} ${262 - 58 * k}C${x + 6 * k} ${262 - 44 * k} ${x + 8 * k} ${262 - 24 * k} ${x} ${b}`);
+  });
+  // Humayun's Tomb
+  near.push("M116 262V232H284V262");
+  for (let x = 122; x < 276; x += 16) near.push(`M${x} 262V249Q${x} 241 ${x + 5} 239Q${x + 10} 241 ${x + 10} 249V262`);
+  near.push(
+    "M140 232V170H260V232",
+    "M176 232V160H224V232",
+    "M182 232V190Q182 172 200 164Q218 172 218 190V232",
+    "M190 232V199Q190 187 200 183Q210 187 210 199V232"
+  );
+  [150, 232].forEach((x) =>
+    near.push(
+      `M${x} 228V214Q${x} 206 ${x + 9} 203Q${x + 18} 206 ${x + 18} 214V228`,
+      `M${x} 198V188Q${x} 181 ${x + 9} 178Q${x + 18} 181 ${x + 18} 188V198`
+    )
+  );
+  near.push("M168 170V150H232V170");
+  [152, 248].forEach((x) => near.push(`M${x - 6} 170V160M${x + 6} 170V160M${x - 9} 160H${x + 9}`, `M${x - 8} 160Q${x} 146 ${x + 8} 160M${x} 149V142`));
+  near.push(
+    "M166 150C156 118 176 92 200 88C224 92 244 118 234 150",
+    "M186 150C181 124 189 102 200 88M214 150C219 124 211 102 200 88",
+    "M200 88V64",
+    "M197 79a3 3 0 1 0 6 0a3 3 0 1 0-6 0M198 71a2 2 0 1 0 4 0a2 2 0 1 0-4 0"
+  );
+  // charbagh water channel
+  near.push("M184 300L195 262M216 300L205 262", "M190 286H210M193 274H207");
+  // India Gate
+  near.push(
+    "M302 262V256H368V262",
+    "M306 256V150H364V256",
+    "M322 256V196Q322 176 335 172Q348 176 348 196V256",
+    "M312 256V158M358 256V158",
+    "M302 150H368M308 150V128H362V150",
+    "M315 141H355M319 136H351",
+    "M314 128V121H356V128M322 121Q335 106 348 121"
+  );
+  // Punjab: wheat on the right
+  [[382, 0], [392, 4]].forEach(([x, lean]) => {
+    near.push(`M${x} 262C${x} 250 ${x + lean / 2} 240 ${x + lean + 4} 228`);
+    let g = "";
+    for (let i = 0; i < 4; i++) {
+      const gx = x + lean + 4 - i * 0.8;
+      const gy = 228 + i * 5;
+      g += `M${gx.toFixed(1)} ${gy}l-3.4-4.4M${gx.toFixed(1)} ${gy}l3.4-4.4`;
+    }
+    near.push(g, `M${x} 252q-7-3-9-10M${x} 246q7-3 9-10`);
+  });
+  // a few drawn stars (the moon comes from the night-sky photo behind)
+  [[40, 24], [150, 40], [262, 22], [386, 78], [110, 96], [20, 120]].forEach(([x, y]) =>
+    near.push(`M${x} ${y - 4}L${x + 1} ${y - 1}L${x + 4} ${y}L${x + 1} ${y + 1}L${x} ${y + 4}L${x - 1} ${y + 1}L${x - 4} ${y}L${x - 1} ${y - 1}Z`)
+  );
+  return { far, near };
+})();
+
+function Skyline() {
+  // the ghost stroke draws alongside its main stroke, so both share an index
+  const far = SKYLINE.far.length;
+  const draw = (d, key, i) => <path key={key} d={d} pathLength="1" style={{ "--i": i }} />;
   return (
-    <svg className={`tear tear-${tone}`} viewBox="0 0 400 34" preserveAspectRatio="none" aria-hidden="true">
-      {tone === "wine" && <path d={tornPath(seed + 7, 3)} className="tear-fibre" />}
-      <path d={tornPath(seed)} className="tear-edge" />
+    <svg className="skyline" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="sk-gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fbe7b2" />
+          <stop offset="1" stopColor="#d4a24c" />
+        </linearGradient>
+        <filter id="sk-ink" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" />
+          <feDisplacementMap in="SourceGraphic" scale="1.8" />
+        </filter>
+      </defs>
+      <g className="sk-far">{SKYLINE.far.map((d, k) => draw(d, `f${k}`, k))}</g>
+      <g className="sk-fill">
+        {SKY_FILL.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+      <g className="sk-near" filter="url(#sk-ink)">
+        <g className="sk-ghost" transform="translate(.7 .6)">
+          {SKYLINE.near.map((d, k) => draw(d, `g${k}`, far + k))}
+        </g>
+        {SKYLINE.near.map((d, k) => draw(d, `n${k}`, far + k))}
+      </g>
     </svg>
+  );
+}
+
+/* Marigold strings draped across the top of the hero */
+const GARLANDS = (() => {
+  const strands = [
+    [[-10, 4], [100, 62], [210, 4]],
+    [[190, 4], [300, 62], [410, 4]],
+    [[-10, 0], [200, 40], [410, 0]],
+  ];
+  return strands.map(([p0, c, p2], si) => {
+    const beads = [];
+    const n = si === 2 ? 26 : 16;
+    for (let k = 1; k < n; k++) {
+      const t = k / n;
+      const x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * c[0] + t * t * p2[0];
+      const y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * c[1] + t * t * p2[1];
+      beads.push({ x: f(x), y: f(y), big: k % 2 === 0 });
+    }
+    return { d: `M${p0[0]} ${p0[1]}Q${c[0]} ${c[1]} ${p2[0]} ${p2[1]}`, beads, back: si === 2 };
+  });
+})();
+
+function Garland() {
+  return (
+    <svg className="garland" viewBox="0 0 400 90" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+      <defs>
+        <radialGradient id="marigold" cx="40%" cy="35%">
+          <stop offset="0" stopColor="#ffe08a" />
+          <stop offset="0.6" stopColor="#e9a23b" />
+          <stop offset="1" stopColor="#b8641c" />
+        </radialGradient>
+      </defs>
+      {GARLANDS.map((g, gi) => (
+        <g key={gi} className={`garland-strand ${g.back ? "garland-back" : ""}`} style={{ "--gi": gi }}>
+          <path d={g.d} className="garland-thread" />
+          {g.beads.map((b, k) =>
+            b.big ? (
+              <circle key={k} cx={b.x} cy={b.y} r="3.4" fill="url(#marigold)" />
+            ) : (
+              <circle key={k} cx={b.x} cy={b.y} r="1.3" className="garland-bead" />
+            )
+          )}
+        </g>
+      ))}
+      {[0, 200, 400].map((x) => (
+        <g key={x} className="garland-drop">
+          <path d={`M${x} 4V${x === 200 ? 26 : 22}`} className="garland-thread" />
+          <circle cx={x} cy={x === 200 ? 30 : 26} r="4" fill="url(#marigold)" />
+          <path d={`M${x - 2.5} ${x === 200 ? 35 : 31}h5l-2.5 6Z`} className="garland-bell" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* Woven borders: Punjabi phulkari on wine sections, Himachali Kullu weave on ivory ones */
+const KULLU = (() => {
+  const steps = (cx, cy, r) => {
+    let d = "";
+    for (let y = -r; y < r; y += 2) {
+      const w = r - Math.abs(y + 1);
+      d += `M${cx - w} ${cy + y}h${w * 2}v2h${-w * 2}Z`;
+    }
+    return d;
+  };
+  return { outer: steps(16, 13, 8), inner: steps(16, 13, 4), left: steps(0, 13, 5), right: steps(32, 13, 5) };
+})();
+
+function TextileDefs() {
+  return (
+    <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" focusable="false">
+      <defs>
+        <pattern id="phk-gold" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="1.35" height="2.4" fill="#f2b544" />
+        </pattern>
+        <pattern id="phk-saffron" width="2.2" height="2.2" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+          <rect width="1.2" height="2.2" fill="#e8762b" />
+        </pattern>
+        <pattern id="phulkari-tile" width="36" height="26" patternUnits="userSpaceOnUse">
+          <rect width="36" height="26" fill="#3d0613" />
+          <path d="M0 3H36M0 23H36" stroke="#e7b75a" strokeWidth="1.1" strokeDasharray="3 2" />
+          <path d="M18 5L26 13L18 21L10 13Z" fill="url(#phk-gold)" />
+          <path d="M18 9.5L21.5 13L18 16.5L14.5 13Z" fill="url(#phk-saffron)" />
+          <circle cx="18" cy="13" r="1" fill="#fbe7b2" />
+          <path d="M0 7L4.5 13L0 19ZM36 7L31.5 13L36 19Z" fill="url(#phk-saffron)" />
+        </pattern>
+        <pattern id="kullu-tile" width="32" height="26" patternUnits="userSpaceOnUse">
+          <rect width="32" height="26" fill="#f1e7d3" />
+          <rect y="1" width="32" height="2" fill="#7a1430" />
+          <rect y="23" width="32" height="2" fill="#7a1430" />
+          <rect y="4" width="32" height="1" fill="#2c3d63" />
+          <rect y="21" width="32" height="1" fill="#2c3d63" />
+          <path d={KULLU.outer} fill="#7a1430" />
+          <path d={KULLU.inner} fill="#d9a441" />
+          <path d={KULLU.left + KULLU.right} fill="#2f5d4a" />
+        </pattern>
+      </defs>
+    </svg>
+  );
+}
+
+function Band({ kind }) {
+  return (
+    <svg className={`band band-${kind}`} aria-hidden="true">
+      <rect className="band-run" width="200%" height="100%" fill={`url(#${kind}-tile)`} />
+    </svg>
+  );
+}
+
+/* School-to-forever chapters, joined by a dotted Delhi route */
+const STORY = [
+  {
+    icon: "book",
+    title: "Where it all began",
+    text: "It started in a school in Delhi — a Himachali girl, a Punjabi boy, and a friendship that grew between classes, lunch breaks and long conversations that always felt like home.",
+  },
+  {
+    icon: "pin",
+    title: "Growing up, together",
+    text: "From school corridors to spontaneous food runs across Delhi, through every exam and every high and low, we realised the best adventures are the ones lived together.",
+  },
+  {
+    icon: "hearts",
+    title: "Finding home",
+    text: "Harsh Saab found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh her rock, partner-in-crime and easiest source of joy.",
+  },
+  {
+    icon: "rings",
+    title: "And now, forever",
+    text: "From the hills of Himachal to the heart of Punjab, two families now become one — and we cannot wait to celebrate with all of you.",
+  },
+];
+
+const STORY_ICONS = {
+  book: [
+    "M3 6.5C6 5 9 5 12 7C15 5 18 5 21 6.5V19C18 17.5 15 17.5 12 19C9 17.5 6 17.5 3 19Z",
+    "M12 7V19",
+    "M6.2 11c0-1.1 1.5-1.5 2.1-.4c.6-1.1 2.1-.7 2.1.4c0 1.2-2.1 2.3-2.1 2.3S6.2 12.2 6.2 11Z",
+    "M14 10.5h4.5M14 13h4.5M14 15.5h3",
+  ],
+  pin: [
+    "M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z",
+    "M9.6 9.6c0-1.2 1.7-1.7 2.4-.5c.7-1.2 2.4-.7 2.4.5c0 1.3-2.4 2.6-2.4 2.6S9.6 10.9 9.6 9.6Z",
+  ],
+  hearts: [
+    "M9 19s-6-3.8-6-8.2A3.4 3.4 0 0 1 9 8.6a3.4 3.4 0 0 1 6 2.2c0 4.4-6 8.2-6 8.2Z",
+    "M14.6 6.6a2.7 2.7 0 0 1 5.9 1.4c0 3-3.6 5.4-3.6 5.4",
+  ],
+  rings: ["M3 15a5 5 0 1 0 10 0a5 5 0 1 0-10 0", "M10 13a5 5 0 1 0 10 0a5 5 0 1 0-10 0", "M13.5 4.6l1.6-2h2.8l1.6 2l-3 3.2Z"],
+};
+const CHAPTER = ["One", "Two", "Three", "Four"];
+
+function StoryRoute() {
+  return (
+    <ol className="route">
+      {STORY.map((c, i) => (
+        <li key={c.title} className="route-stop rv rv-none">
+          <span className="route-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {STORY_ICONS[c.icon].map((d) => (
+                <path key={d} d={d} pathLength="1" />
+              ))}
+            </svg>
+          </span>
+          <div className="route-text">
+            <span className="route-step">Chapter {CHAPTER[i]}</span>
+            <h3 className="script route-title">{c.title}</h3>
+            <p className="body-copy">{c.text}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -386,7 +630,7 @@ const LAUREL = (() => {
 
 function Laurel() {
   return (
-    <svg className="env-laurel" viewBox="-100 -100 200 200" aria-hidden="true">
+    <svg className="lt-laurel" viewBox="-100 -100 200 200" aria-hidden="true">
       <defs>
         <linearGradient id="laurel-gold" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#fbe7ae" />
@@ -394,6 +638,19 @@ function Laurel() {
           <stop offset="1" stopColor="#8f651c" />
         </linearGradient>
       </defs>
+      {[
+        ["0 77", 1.15, 0],
+        ["-41 -61", 0.75, 1],
+        ["41 -61", 0.75, 2],
+      ].map(([at, k, i]) => (
+        <path
+          key={at}
+          className="laurel-heart"
+          d={HEART}
+          transform={`translate(${at}) scale(${k})`}
+          style={{ "--i": i }}
+        />
+      ))}
       {[1, -1].map((sx) => (
         <g key={sx} transform={`scale(${sx} 1)`}>
           <path className="laurel-stem" d={LAUREL.stem} pathLength="1" />
@@ -412,7 +669,45 @@ function Laurel() {
   );
 }
 
-// Gold wax seal with the embossed HB monogram.
+/* Tiny gold and blush hearts drifting up over the envelope */
+function LoveHearts() {
+  return (
+    <div className="love-hearts" aria-hidden="true">
+      {SPARKS.slice(0, 16).map((p, i) => (
+        <i
+          key={i}
+          style={{ left: `${p.x}%`, top: `${f(20 + Number(p.y) * 0.75)}%`, "--s": f(0.7 + Number(p.s) / 4), "--d": `${f(Number(p.d) * 1.6)}s`, "--delay": `${p.delay}s` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* A little postage stamp and postmark, so the envelope reads as a love letter */
+function Stamp() {
+  return (
+    <div className="env-stamp" aria-hidden="true">
+      <div className="stamp-paper">
+        <div className="stamp-inner">
+          <svg viewBox="0 0 40 46">
+            <path d="M8 40V18H32V40M13 40V29Q13 24 20 22Q27 24 27 29V40M6 18H34M9 18V13H31V18M12 13V10H28V13M16 10Q20 5 24 10M5 40H35" />
+            <path d={HEART} transform="translate(20 33) scale(.42)" className="stamp-heart" />
+          </svg>
+          <span>Dilli · ₹ 24</span>
+        </div>
+      </div>
+      <svg className="postmark" viewBox="0 0 70 40">
+        <circle cx="20" cy="20" r="16" />
+        <circle cx="20" cy="20" r="12.5" />
+        <text x="20" y="18.5">DELHI</text>
+        <text x="20" y="25.5">24·11·26</text>
+        <path d="M40 12q5-3 10 0t10 0t10 0M40 20q5-3 10 0t10 0t10 0M40 28q5-3 10 0t10 0t10 0" />
+      </svg>
+    </div>
+  );
+}
+
+// Heart-shaped gold wax seal with the embossed HB monogram.
 function Seal() {
   return (
     <svg viewBox="-60 -60 120 120" className="seal-svg" aria-hidden="true">
@@ -428,15 +723,26 @@ function Seal() {
           <stop offset="0.6" stopColor="#d3a54c" />
           <stop offset="1" stopColor="#a87828" />
         </radialGradient>
+        <linearGradient id="seal-shine-g" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0.5" stopColor="#fff" stopOpacity="0.75" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <clipPath id="seal-clip">
+          <path d={SEAL_OUTER} />
+        </clipPath>
       </defs>
       <path d={SEAL_OUTER} fill="url(#seal-wax)" />
-      <circle r="37" fill="url(#seal-well)" />
-      <circle r="37.5" fill="none" stroke="#fff3c6" strokeWidth="2" opacity="0.9" transform="translate(-0.8 -0.8)" />
-      <circle r="37.5" fill="none" stroke="#6b4512" strokeWidth="1.6" opacity="0.6" transform="translate(0.8 0.9)" />
-      <circle r="31" fill="none" stroke="#8a6020" strokeWidth=".8" opacity="0.45" strokeDasharray="1.5 3" />
+      <path d={SEAL_INNER} fill="url(#seal-well)" />
+      <path d={SEAL_INNER} fill="none" stroke="#fff3c6" strokeWidth="2" opacity="0.9" transform="translate(-0.8 -0.8)" />
+      <path d={SEAL_INNER} fill="none" stroke="#6b4512" strokeWidth="1.6" opacity="0.6" transform="translate(0.8 0.9)" />
+      <path d={SEAL_RING} fill="none" stroke="#8a6020" strokeWidth=".8" opacity="0.45" strokeDasharray="1.5 3" />
       <g className="seal-mono">
-        <text x="-1" y="11" transform="translate(1 1.2)" fill="#fff2c0">HB</text>
-        <text x="-1" y="11" fill="#7a5214">HB</text>
+        <text x="-1" y="7" transform="translate(1 1.2)" fill="#fff2c0">HB</text>
+        <text x="-1" y="7" fill="#7a5214">HB</text>
+      </g>
+      <g clipPath="url(#seal-clip)">
+        <rect className="seal-shine" x="-90" y="-60" width="36" height="120" fill="url(#seal-shine-g)" />
       </g>
     </svg>
   );
@@ -604,7 +910,6 @@ export default function RoyalInvite() {
   const stageRef = useRef("intro");
   const [revealed, setRevealed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [burst, setBurst] = useState(false);
   const audioRef = useRef(null);
   const countdown = useCountdown(WEDDING_TARGET_ISO);
 
@@ -613,15 +918,18 @@ export default function RoyalInvite() {
 
   useReveal(revealed);
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      if (stageRef.current === "intro") {
-        stageRef.current = "ready";
-        setStage("ready");
-      }
-    }, 3400);
-    return () => clearTimeout(id);
+  const flippedAt = useRef(0);
+  const turnOver = useCallback(() => {
+    if (stageRef.current !== "intro") return;
+    stageRef.current = "ready";
+    flippedAt.current = Date.now();
+    setStage("ready");
   }, []);
+
+  useEffect(() => {
+    const id = setTimeout(turnOver, 1700);
+    return () => clearTimeout(id);
+  }, [turnOver]);
 
   const rootRef = useRef(null);
   useEffect(() => {
@@ -654,7 +962,18 @@ export default function RoyalInvite() {
   }, [stage]);
 
   const openEnvelope = useCallback(() => {
-    if (stageRef.current === "opening" || stageRef.current === "done") return;
+    if (["turning", "opening", "done"].includes(stageRef.current)) return;
+    // A tap on the address side first turns the envelope over to the seal
+    if (stageRef.current === "intro") turnOver();
+    const wait = Math.max(0, flippedAt.current + 1100 - Date.now());
+    if (wait > 0) {
+      stageRef.current = "turning";
+      setTimeout(() => {
+        stageRef.current = "ready";
+        openEnvelope();
+      }, wait);
+      return;
+    }
     stageRef.current = "opening";
     setStage("opening");
     window.scrollTo(0, 0);
@@ -666,12 +985,12 @@ export default function RoyalInvite() {
       audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }
 
-    setTimeout(() => setRevealed(true), 2700);
+    setTimeout(() => setRevealed(true), 3700);
     setTimeout(() => {
       stageRef.current = "done";
       setStage("done");
-    }, 3900);
-  }, []);
+    }, 4700);
+  }, [turnOver]);
 
   const toggleAudio = () => {
     const audio = audioRef.current;
@@ -694,8 +1013,6 @@ export default function RoyalInvite() {
     e.preventDefault();
     if (!rsvp.name.trim()) return;
     setSubmitted(true);
-    setBurst(true);
-    setTimeout(() => setBurst(false), 5200);
   };
 
   const pad = (n) => String(n).padStart(2, "0");
@@ -704,6 +1021,7 @@ export default function RoyalInvite() {
     <div ref={rootRef} className={`inv ${revealed ? "revealed" : ""}`} style={ROOT_STYLE}>
       <div className="progress" aria-hidden="true" />
       <FloralDefs />
+      <TextileDefs />
       <audio ref={audioRef} src="/audio/wedding-bgm.mp3" loop preload="auto" />
 
       {/* =========================================================
@@ -718,32 +1036,6 @@ export default function RoyalInvite() {
           tabIndex={0}
           aria-label="Open the wedding invitation"
         >
-          <div className="env-inside" />
-          <div className="env-card" aria-hidden="true">
-            <div className="env-card-inner">
-              <span className="env-card-kicker">॥ श्री गणेशाय नमः ॥</span>
-              <span className="env-card-sub">Together with their families</span>
-              <span className="script env-card-name">Harsh</span>
-              <span className="script env-card-amp">&amp;</span>
-              <span className="script env-card-name">Bharti</span>
-              <span className="env-card-date">24 · 11 · 2026</span>
-            </div>
-          </div>
-          <div className="env-body" />
-          <svg className="env-shadow" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <filter id="flap-shadow" x="-10%" y="-10%" width="120%" height="140%">
-              <feGaussianBlur stdDeviation="1.4" />
-            </filter>
-            <polygon points="0,0 100,0 50,47.5" filter="url(#flap-shadow)" />
-          </svg>
-          <svg className="env-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            {["M50 44L0 0", "M50 44L100 0", "M50 44L0 100", "M50 44L100 100"].map((d) => (
-              <g key={d}>
-                <path d={d} className="env-line" vectorEffect="non-scaling-stroke" />
-                <path d={d} className="env-trace" pathLength="1" vectorEffect="non-scaling-stroke" />
-              </g>
-            ))}
-          </svg>
           <svg className="env-florals" viewBox="0 0 100 216" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
             <defs>
               <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -767,26 +1059,93 @@ export default function RoyalInvite() {
               </g>
             ))}
           </svg>
-          <div className="env-light" />
-          <div className="env-flap">
-            <div className="env-flap-face env-flap-front" />
-            <div className="env-flap-face env-flap-back" />
-          </div>
           <div className="env-frame" aria-hidden="true" />
-          <Sparkles className="env-dust" />
-          <Laurel />
-          <div className="env-seal">
-            <Seal />
-            <span className="seal-sheen" />
+          <LoveHearts />
+          <div className="lt-stage">
+            <div className="lt-envelope">
+              {/* address side */}
+              <div className="lt-face lt-front">
+                <div className="lt-from">
+                  Harsh &amp; Bharti
+                  <br />
+                  New Delhi
+                </div>
+                <Stamp />
+                <div className="lt-to">
+                  <span className="lt-to-label">To,</span>
+                  <span className="script lt-to-name">Someone very special</span>
+                  <span className="lt-to-line" />
+                </div>
+                <span className="lt-handle">
+                  Handle with love
+                  <svg viewBox="-8 -8 16 14" aria-hidden="true">
+                    <path d={HEART} />
+                  </svg>
+                </span>
+              </div>
+
+              {/* sealed side */}
+              <div className="lt-face lt-back">
+                <div className="lt-liner" />
+                <div className="lt-card">
+                  <div className="lt-card-inside">
+                    <span className="lt-kicker">॥ श्री गणेशाय नमः ॥</span>
+                    <span className="lt-sub">Together with their families</span>
+                    <span className="script lt-names">Harsh &amp; Bharti</span>
+                    <span className="lt-invite">
+                      request the pleasure of your company
+                      <br />
+                      as they begin their forever
+                    </span>
+                    <span className="lt-date">24 · 11 · 2026 · New Delhi</span>
+                  </div>
+                  <div className="lt-cover">
+                    <div className="lt-cover-face lt-cover-front">
+                      <span className="lt-cover-kicker">Wedding Invitation</span>
+                      <span className="script lt-cover-mono">
+                        H
+                        <svg viewBox="-8 -8 16 14" aria-hidden="true">
+                          <path d={HEART} />
+                        </svg>
+                        B
+                      </span>
+                      <span className="lt-cover-date">24 · 11 · 2026</span>
+                    </div>
+                    <div className="lt-cover-face lt-cover-back">
+                      <span className="script">Sadde viyah te zaroor aana ji</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="lt-pocket">
+                  <svg className="lt-folds" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M0 0L50 55L100 0M0 100L50 58L100 100" vectorEffect="non-scaling-stroke" />
+                  </svg>
+                </div>
+                <div className="lt-flap-wrap">
+                  <div className="lt-flap">
+                    <div className="lt-flap-face lt-flap-out">
+                      <svg className="lt-folds" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                        <path d="M0 0L50 100L100 0" vectorEffect="non-scaling-stroke" />
+                      </svg>
+                    </div>
+                    <div className="lt-flap-face lt-flap-in" />
+                  </div>
+                </div>
+                <Laurel />
+                <div className="lt-seal">
+                  <Seal />
+                </div>
+                <span className="lt-burst" aria-hidden="true">
+                  {Array.from({ length: 14 }, (_, i) => (
+                    <i key={i} style={{ "--a": `${i * 25.7}deg`, "--r": `${64 + (i % 4) * 16}px` }} />
+                  ))}
+                </span>
+              </div>
+            </div>
           </div>
-          <span className="seal-dust" aria-hidden="true">
-            {Array.from({ length: 16 }, (_, i) => (
-              <i key={i} style={{ "--a": `${i * 22.5}deg`, "--r": `${70 + (i % 4) * 14}px` }} />
-            ))}
-          </span>
           <div className="env-hint">
-            <span className="script">You are invited</span>
-            <span className="env-hint-cta">Tap the seal to open</span>
+            <span className="script">A love letter, just for you</span>
+            <span className="env-hint-cta">Tap the heart to open</span>
           </div>
         </div>
       )}
@@ -800,48 +1159,32 @@ export default function RoyalInvite() {
         {isPlaying ? <Pause size={16} /> : <Play size={16} />}
       </button>
 
-      {burst && (
-        <div className="petals petals-burst" aria-hidden="true">
-          {PETALS.concat(PETALS).map((p, i) => (
-            <span
-              key={i}
-              className={`petal petal-${p.tone}`}
-              style={{ "--x": `${(Number(p.x) + i * 13) % 100}%`, "--d": `${(Number(p.d) * 0.45).toFixed(1)}s`, "--delay": `${((i % 9) * 0.12).toFixed(2)}s`, "--s": p.s }}
-            >
-              <i />
-            </span>
-          ))}
-        </div>
-      )}
-
       <main className="inv-col">
         {/* =========================================================
             HERO
             ========================================================= */}
         <section className="hero">
-          <div className="hero-media">
-            <img className="hero-bg" src="/images/palace_night_hb.jpg" alt="" />
+          {/* Photo: "A full moon rises over a mountain range" by @photographsbyashish on Unsplash (Unsplash License) */}
+          <div className="hero-photo" aria-hidden="true">
+            <img src="/images/hero_moonrise.jpg" alt="" />
           </div>
-          <div className="hero-shade" />
-          <Dove className="dove-1" />
-          <Dove className="dove-2" />
-          <Dove className="dove-3" />
-          <Petals />
+          <Sparkles className="hero-stars" count={20} />
+          <Garland />
           <div className="hero-copy-wrap">
             <div className="hero-copy">
               <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>
-              <p className="script hero-day">Wedding Day</p>
-              <p className="hero-date">
-                <i />
-                24 · 11 · 2026
-                <i />
-              </p>
-              <p className="hero-place">New Delhi</p>
+              <p className="hero-pre">The wedding of</p>
               <h1 className="hero-names">
                 <span className="hn-1">Harsh</span>
                 <span className="hn-amp">&amp;</span>
                 <span className="hn-2">Bharti</span>
               </h1>
+              <p className="hero-date">
+                <i />
+                24 · 11 · 2026
+                <i />
+              </p>
+              <p className="hero-tagline">From a Delhi school to forever</p>
             </div>
           </div>
           <button
@@ -858,8 +1201,11 @@ export default function RoyalInvite() {
               </svg>
             </span>
           </button>
-          <div className="hero-ornament">
-            <Lotus className="lotus-hero" />
+          <div className="hero-art">
+            <Skyline />
+            <p className="hero-route">
+              Himachal <i /> Dilli <i /> Punjab
+            </p>
           </div>
         </section>
 
@@ -867,7 +1213,7 @@ export default function RoyalInvite() {
             INVITATION LETTER
             ========================================================= */}
         <section className="sec wine">
-          <Tear seed={1} tone="wine" />
+          <Band kind="phulkari" />
           <Sparkles count={14} />
           <p className="shloka rv rv-blur">
             वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।
@@ -881,11 +1227,13 @@ export default function RoyalInvite() {
           </p>
           <div className="couple">
             <div className="person rv rv-l">
+              <div className="person-from">Punjab</div>
               <div className="person-name">Harsh Wadhera</div>
               <div className="person-parents">Son of Smt. Anita &amp; Sh. Rajesh Wadhera</div>
             </div>
             <div className="script couple-with rv rv-z">with</div>
             <div className="person rv rv-r">
+              <div className="person-from">Himachal Pradesh</div>
               <div className="person-name">Bharti Sharma</div>
               <div className="person-parents">Daughter of Smt. Sunita &amp; Sh. Sunil Sharma</div>
             </div>
@@ -894,13 +1242,14 @@ export default function RoyalInvite() {
             Your love and support mean the world to us, and we would be honoured to have you by our side as we
             say &ldquo;forever.&rdquo;
           </p>
+          <p className="script punjabi-line rv">Sadde viyah te zaroor aana ji</p>
         </section>
 
         {/* =========================================================
             COUNTDOWN
             ========================================================= */}
         <section className="sec paper">
-          <Tear seed={2} tone="paper" />
+          <Band kind="kullu" />
           <Title>The Celebration Begins In</Title>
           {countdown?.past ? (
             <p className="cd-done rv">Just married — thank you for your blessings!</p>
@@ -932,7 +1281,7 @@ export default function RoyalInvite() {
             SCHEDULE
             ========================================================= */}
         <section className="sec wine">
-          <Tear seed={3} tone="wine" />
+          <Band kind="phulkari" />
           <Title>Schedule of Events</Title>
           <Schedule />
         </section>
@@ -941,7 +1290,7 @@ export default function RoyalInvite() {
             LOCATION
             ========================================================= */}
         <section className="sec paper">
-          <Tear seed={4} tone="paper" />
+          <Band kind="kullu" />
           <Title>Location</Title>
           <Venues />
         </section>
@@ -950,7 +1299,7 @@ export default function RoyalInvite() {
             OUR STORY
             ========================================================= */}
         <section className="sec wine">
-          <Tear seed={5} tone="wine" />
+          <Band kind="phulkari" />
           <Title>Our Story</Title>
           <div className="frames rv rv-none">
             <figure className="frame frame-a">
@@ -960,31 +1309,18 @@ export default function RoyalInvite() {
               <img src="/images/event_wedding_hb.jpg" alt="The wedding mandap" loading="lazy" />
             </figure>
           </div>
-          <div className="story">
-            <p className="body-copy rv rv-blur">
-              Our journey began with a simple conversation that effortlessly turned into hours of shared
-              laughter, quiet understandings, and an instant connection that felt like home.
-            </p>
-            <p className="body-copy rv rv-blur">
-              Between shared passions, spontaneous food runs across Delhi, and unconditional support through
-              every high and low, we realised that the best adventures in life are the ones lived together.
-            </p>
-            <p className="body-copy rv rv-blur">
-              Harsh found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh
-              her rock, partner-in-crime, and easiest source of joy.
-            </p>
-            <p className="body-copy rv rv-blur">
-              As we step into this sacred lifelong union, we cannot wait to celebrate surrounded by the warmth
-              and blessings of our cherished family and friends.
-            </p>
-          </div>
+          <p className="story-intro rv rv-blur">
+            Ek Punjabi munda, ek Pahadi kudi
+            <span>and one Delhi school</span>
+          </p>
+          <StoryRoute />
         </section>
 
         {/* =========================================================
             FAMILY
             ========================================================= */}
         <section className="sec paper">
-          <Tear seed={6} tone="paper" />
+          <Band kind="kullu" />
           <Title>With Love &amp; Blessings</Title>
           <div className="family">
             {[
@@ -1006,7 +1342,7 @@ export default function RoyalInvite() {
             RSVP
             ========================================================= */}
         <section className="sec wine sec-rsvp">
-          <Tear seed={7} tone="wine" />
+          <Band kind="phulkari" />
           <Lotus className="lotus-rsvp rv rv-none" />
           <Title>Confirm Your Attendance</Title>
           <p className="body-copy rv rv-blur">
@@ -1075,7 +1411,8 @@ export default function RoyalInvite() {
 
           <div className="finale rv rv-none">
             <Sparkles count={18} />
-            <p className="script finale-hope">Hope to see you there!</p>
+            <p className="script finale-hope">Tuhaadi udeek rahegi</p>
+            <p className="finale-en">We&rsquo;ll be waiting for you</p>
             <p className="finale-names">Harsh &amp; Bharti</p>
           </div>
 
