@@ -604,6 +604,7 @@ html.inv-locked body {
   color: #6f3a46;
   max-width: 300px;
   margin: 2px auto 0;
+  text-wrap: balance;
 }
 .venue-sketch {
   display: block;
@@ -691,9 +692,16 @@ html.inv-locked body {
 .family-names {
   font-size: 21px;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.35;
   color: var(--wine);
-  white-space: pre-line;
+}
+/* one couple per line; a long name wraps evenly and the gap keeps couples apart */
+.family-names span {
+  display: block;
+  text-wrap: balance;
+}
+.family-names span + span {
+  margin-top: 8px;
 }
 
 /* RSVP */
@@ -2475,4 +2483,77 @@ html.inv-locked body {
 }
 .revealed .hero-route {
   opacity: 0.9;
+}
+
+/* Real venue photo, in a thin gold mount, with the photographer's credit */
+.venue-photo {
+  max-width: 360px;
+  margin: 16px auto 20px;
+}
+.venue-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #8a6420, #f4dc8a 25%, #b68a2e 50%, #fbeab0 70%, #9c7220);
+  box-shadow: 0 14px 28px rgba(60, 10, 25, 0.28);
+}
+.venues.in .venue-photo img {
+  animation: photoIn 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s both;
+}
+@keyframes photoIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.venue-photo figcaption {
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: #9b6672;
+}
+.venue-photo figcaption a {
+  color: inherit;
+}
+
+/* With Love & Blessings on burgundy */
+.wine .family-role {
+  color: var(--rose-muted);
+}
+.wine .family-names {
+  color: #fff;
+}
+.wine .flourish path {
+  stroke: rgba(240, 207, 162, 0.6);
+}
+.wine .flourish .flourish-gem {
+  fill: var(--champagne);
+}
+
+/* Our Story on ivory */
+.paper .story-intro {
+  color: var(--wine);
+}
+.paper .story-intro span {
+  color: #9b6672;
+}
+.paper .route-step {
+  color: #9b6672;
+}
+.paper .route-title {
+  color: var(--wine);
+}
+.paper .route-icon {
+  border-color: rgba(91, 11, 31, 0.45);
+  background: radial-gradient(circle, rgba(201, 163, 90, 0.18), transparent 70%);
+  box-shadow: 0 0 0 4px rgba(91, 11, 31, 0.06);
+}
+.paper .route-icon path {
+  stroke: var(--wine);
+}
+.paper .route-stop:not(:last-child)::before {
+  border-left-color: rgba(91, 11, 31, 0.35);
+}
+.paper .frame {
+  box-shadow: 0 16px 28px rgba(60, 10, 25, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.45), inset 0 0 0 4px rgba(110, 80, 20, 0.45);
 }

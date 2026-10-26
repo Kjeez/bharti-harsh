@@ -15,36 +15,26 @@ const CALENDAR_URL =
 
 const SCHEDULE = [
   {
-    day: "Monday",
-    date: "23 November",
-    items: [{ time: "7:00 PM", title: "Ring Ceremony & Sangeet", note: "The Grand Ballroom" }],
-  },
-  {
     day: "Tuesday",
     date: "24 November",
     items: [
-      { time: "6:00 PM", title: "Baraat", note: "Radisson Blu, Dwarka" },
-      { time: "7:00 PM", title: "Wedding Ceremony", note: "Vivah Sanskar" },
-      { time: "10:00 PM", title: "Pheras", note: "Under the stars" },
+      {
+        time: "6:00 PM",
+        title: "Departure of Baraat",
+        note: "Baraat will reassemble at Reliance Digital, Sector 13, Dwarka and proceed to Hotel Radisson Blu, Dwarka",
+      },
+      { time: "7:30 PM", title: "Dinner", note: "Radisson Blu, Dwarka" },
+      { time: "10:00 PM", title: "Wedding Ceremony", note: "Radisson Blu, Dwarka" },
     ],
   },
   {
     day: "Wednesday",
     date: "25 November",
-    items: [{ time: "7:30 PM", title: "Grand Reception", note: "Mystique Banquet" }],
+    items: [{ time: "6:00 PM", title: "Grand Reception", note: "Mystique Banquet, Kirti Nagar" }],
   },
 ];
 
 const VENUES = [
-  {
-    key: "sangeet",
-    tab: "Sangeet",
-    event: "Ring Ceremony & Sangeet · 23 Nov",
-    name: "The Grand Ballroom",
-    address: "New Delhi",
-    sketch: "/images/sketch_palace.png",
-    maps: "https://maps.google.com/?q=New+Delhi",
-  },
   {
     key: "wedding",
     tab: "Wedding",
@@ -52,6 +42,12 @@ const VENUES = [
     name: "Radisson Blu Hotel",
     address: "Plot 4, Sector 13, Dwarka, New Delhi — 110075",
     sketch: "/images/sketch_wedding.png",
+    photo: {
+      src: "/images/venue_radisson.jpg",
+      credit: "Kmrpreetam",
+      license: "CC BY-SA 3.0",
+      link: "https://commons.wikimedia.org/wiki/File:1_Hotel_Exterior_View.JPG",
+    },
     maps: "https://maps.google.com/?q=Radisson+Blu+Hotel+New+Delhi+Dwarka",
   },
   {
@@ -59,13 +55,14 @@ const VENUES = [
     tab: "Reception",
     event: "Grand Reception · 25 Nov",
     name: "Mystique Banquet",
-    address: "New Delhi",
+    address: "Rama Road, Kirti Nagar, Shivaji Marg, New Delhi — 110015",
     sketch: "/images/sketch_reception.png",
-    maps: "https://maps.google.com/?q=Mystique+banquet+New+Delhi",
+    photo: { src: "/images/venue_mystique.jpg", credit: "Mystique Banquet" },
+    maps: "https://maps.google.com/?q=Mystique+Banquet+Rama+Road+Kirti+Nagar+New+Delhi+110015",
   },
 ];
 
-const RSVP_EVENTS = ["Sangeet · 23 Nov", "Wedding · 24 Nov", "Reception · 25 Nov"];
+const RSVP_EVENTS = ["Wedding · 24 Nov", "Reception · 25 Nov"];
 
 /* =========================================================
    Deterministic randomness (identical on server and client)
@@ -927,7 +924,24 @@ function Venues() {
         <div className="venue-event">{v.event}</div>
         <div className="venue-name">{v.name}</div>
         <div className="venue-addr">{v.address}</div>
-        <img className="venue-sketch" src={v.sketch} alt={`Sketch of ${v.name}`} loading="lazy" />
+        {v.photo ? (
+          <figure className="venue-photo">
+            <img src={v.photo.src} alt={v.name} loading="lazy" />
+            <figcaption>
+              Photo:{" "}
+              {v.photo.link ? (
+                <a href={v.photo.link} target="_blank" rel="noreferrer">
+                  {v.photo.credit}
+                </a>
+              ) : (
+                v.photo.credit
+              )}
+              {v.photo.license && ` · ${v.photo.license}`}
+            </figcaption>
+          </figure>
+        ) : (
+          <img className="venue-sketch" src={v.sketch} alt={`Sketch of ${v.name}`} loading="lazy" />
+        )}
         <a className="pill pill-wine" href={v.maps} target="_blank" rel="noreferrer">
           <MapPin size={14} /> Get Directions
         </a>
@@ -1271,7 +1285,7 @@ export default function RoyalInvite() {
           <div className="couple">
             <div className="person rv rv-l">
               <div className="person-name">Bharti Sharma</div>
-              <div className="person-parents">Daughter of Smt. Raveena Sharma &amp; Sh. Rajesh Sharma</div>
+              <div className="person-parents">Daughter of Smt. Pushpa Sharma &amp; Sh. Rajesh Sharma</div>
             </div>
             <div className="script couple-with rv rv-z">with</div>
             <div className="person rv rv-r">
@@ -1337,10 +1351,39 @@ export default function RoyalInvite() {
         </section>
 
         {/* =========================================================
-            OUR STORY
+            FAMILY
             ========================================================= */}
         <section className="sec wine">
           <Band kind="phulkari" />
+          <Title>With Love &amp; Blessings</Title>
+          <div className="family">
+            {[
+              [
+                "Grandparents",
+                "Late Smt. Harbans Kaur & Late Sh. Joginder Singh\nSmt. Sumitra Devi & Late Sh. Ram Ji Das",
+              ],
+              ["Parents", "Pushpa & Rajesh Sharma\nJasvinder Kaur & Dr. Harbhajan Singh"],
+              ["Family & Relatives", "Sharma & Saib Parivar"],
+              ["With Best Compliments", "All Near & Dear Ones"],
+            ].map(([role, names], i) => (
+              <div key={role} className="family-group rv">
+                {i > 0 && <Flourish />}
+                <div className="family-role">{role}</div>
+                <div className="family-names">
+                  {names.split("\n").map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* =========================================================
+            OUR STORY
+            ========================================================= */}
+        <section className="sec paper sec-story">
+          <Band kind="kullu" />
           <Title>Our Story</Title>
           <div className="frames rv rv-none">
             <figure className="frame frame-a">
@@ -1355,28 +1398,6 @@ export default function RoyalInvite() {
             <span>and one Delhi school</span>
           </p>
           <StoryRoute />
-        </section>
-
-        {/* =========================================================
-            FAMILY
-            ========================================================= */}
-        <section className="sec paper">
-          <Band kind="kullu" />
-          <Title>With Love &amp; Blessings</Title>
-          <div className="family">
-            {[
-              ["Grandparents", "Smt. & Sh. Sharma · Smt. & Sh. Wadhera"],
-              ["Parents", "Raveena & Rajesh Sharma\nJasvinder Kaur & Dr. Harbhajan Singh"],
-              ["Family & Relatives", "Sharma & Wadhera Parivar"],
-              ["With Best Compliments", "All Near & Dear Ones"],
-            ].map(([role, names], i) => (
-              <div key={role} className="family-group rv">
-                {i > 0 && <Flourish />}
-                <div className="family-role">{role}</div>
-                <div className="family-names">{names}</div>
-              </div>
-            ))}
-          </div>
         </section>
 
         {/* =========================================================
