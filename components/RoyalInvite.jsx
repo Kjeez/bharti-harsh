@@ -368,6 +368,50 @@ function Flourish() {
 /* =========================================================
    Wax seal
    ========================================================= */
+/* Gold laurel wreath that grows in behind the seal */
+const LAUREL = (() => {
+  const R = 70;
+  const pt = (deg) => [Math.cos((deg * Math.PI) / 180) * R, Math.sin((deg * Math.PI) / 180) * R];
+  const [x1, y1] = pt(100);
+  const [x2, y2] = pt(236);
+  const leaves = [];
+  for (let i = 0; i < 10; i++) {
+    const deg = 106 + i * 13;
+    const [x, y] = pt(deg);
+    leaves.push({ x: f(x), y: f(y), r: f(deg + 90 - 34), i: i * 2 });
+    leaves.push({ x: f(x), y: f(y), r: f(deg + 90 + 30), i: i * 2 + 1 });
+  }
+  return { stem: `M${f(x1)} ${f(y1)}A${R} ${R} 0 0 1 ${f(x2)} ${f(y2)}`, leaves };
+})();
+
+function Laurel() {
+  return (
+    <svg className="env-laurel" viewBox="-100 -100 200 200" aria-hidden="true">
+      <defs>
+        <linearGradient id="laurel-gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fbe7ae" />
+          <stop offset="0.5" stopColor="#d4a24c" />
+          <stop offset="1" stopColor="#8f651c" />
+        </linearGradient>
+      </defs>
+      {[1, -1].map((sx) => (
+        <g key={sx} transform={`scale(${sx} 1)`}>
+          <path className="laurel-stem" d={LAUREL.stem} pathLength="1" />
+          {LAUREL.leaves.map((l) => (
+            <path
+              key={l.i}
+              className="laurel-leaf"
+              d="M0 0C4-3.4 10-3.4 15 0C10 3.4 4 3.4 0 0Z"
+              transform={`translate(${l.x} ${l.y}) rotate(${l.r})`}
+              style={{ "--i": l.i }}
+            />
+          ))}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 // Gold wax seal with the embossed HB monogram.
 function Seal() {
   return (
@@ -622,11 +666,11 @@ export default function RoyalInvite() {
       audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }
 
-    setTimeout(() => setRevealed(true), 2500);
+    setTimeout(() => setRevealed(true), 2700);
     setTimeout(() => {
       stageRef.current = "done";
       setStage("done");
-    }, 3300);
+    }, 3900);
   }, []);
 
   const toggleAudio = () => {
@@ -730,6 +774,7 @@ export default function RoyalInvite() {
           </div>
           <div className="env-frame" aria-hidden="true" />
           <Sparkles className="env-dust" />
+          <Laurel />
           <div className="env-seal">
             <Seal />
             <span className="seal-sheen" />
@@ -799,10 +844,20 @@ export default function RoyalInvite() {
               </h1>
             </div>
           </div>
-          <div className="hero-cue" aria-hidden="true">
-            <span>Scroll</span>
-            <i />
-          </div>
+          <button
+            type="button"
+            className="hero-cue"
+            onClick={(e) => e.currentTarget.closest(".hero").nextElementSibling?.scrollIntoView({ behavior: "smooth" })}
+            aria-label="Scroll down to the invitation"
+          >
+            <span className="cue-label">Scroll to begin</span>
+            <span className="cue-orb" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 6l5 5 5-5" />
+                <path d="M7 12l5 5 5-5" />
+              </svg>
+            </span>
+          </button>
           <div className="hero-ornament">
             <Lotus className="lotus-hero" />
           </div>
