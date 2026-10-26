@@ -1480,15 +1480,15 @@ export default function RoyalInvite() {
 
           <div className="contacts rv">
             <div className="contacts-title">For any assistance</div>
-            <a href="tel:+919811154321" className="contact">
+            <a href="tel:+919811512518" className="contact">
               <Phone size={13} />
-              <span>Sunil Sharma</span>
-              <b>+91 98111 54321</b>
+              <span>Dr. Harbhajan Singh</span>
+              <b>+91 98115 12518</b>
             </a>
-            <a href="tel:+919810012345" className="contact">
+            <a href="tel:+919210870136" className="contact">
               <Phone size={13} />
-              <span>Rajesh Wadhera</span>
-              <b>+91 98100 12345</b>
+              <span>Rajesh Sharma</span>
+              <b>+91 92108 70136</b>
             </a>
           </div>
         </section>
