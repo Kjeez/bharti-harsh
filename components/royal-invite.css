@@ -618,7 +618,7 @@ html.inv-locked body {
 /* Gold frames */
 .frames {
   position: relative;
-  height: 300px;
+  height: 330px;
   max-width: 340px;
   margin: 6px auto 30px;
 }
@@ -654,11 +654,12 @@ html.inv-locked body {
 .frame-a img { object-position: center 25%; }
 .frame-b {
   right: 0;
-  top: 78px;
+  top: 64px;
   width: 52%;
-  height: 196px;
+  height: 250px;
   transform: rotate(5deg);
 }
+.frame-b img { object-position: center 30%; }
 .story {
   margin-top: 4px;
 }

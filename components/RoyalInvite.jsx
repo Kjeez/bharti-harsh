@@ -7,9 +7,9 @@ import "./royal-invite.css";
 // Baraat: 24 November 2026, 6:00 PM IST
 const WEDDING_TARGET_ISO = "2026-11-24T18:00:00+05:30";
 
-const CALENDAR_URL =
+const calendarUrl = (names) =>
   "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-  "&text=" + encodeURIComponent("Bharti & Harsh — Wedding Ceremony") +
+  "&text=" + encodeURIComponent(`${names} — Wedding Ceremony`) +
   "&dates=20261124T123000Z/20261124T183000Z" +
   "&location=" + encodeURIComponent("Radisson Blu Hotel, Plot 4, Sector 13, Dwarka, New Delhi 110075");
 
@@ -33,6 +33,53 @@ const SCHEDULE = [
     items: [{ time: "6:00 PM", title: "Grand Reception", note: "Mystique Banquet, Kirti Nagar" }],
   },
 ];
+
+/* The same invite is shared three ways: by both families, by Bharti's side
+   (her name first, Hindi blessing, her family's details) and by Harsh's side
+   (his name first, Gurbani and Punjabi lines, his family's details). */
+const BRIDE = { side: "bride", name: "Bharti", full: "Bharti Sharma", parents: "Daughter of Smt. Pushpa Sharma & Sh. Rajesh Sharma" };
+const GROOM = { side: "groom", name: "Harsh", full: "Harsh Saib", parents: "Son of Smt. Jasvinder Kaur & Dr. Harbhajan Singh" };
+const BRIDE_CONTACT = { name: "Rajesh Sharma", tel: "+919210870136", shown: "+91 92108 70136" };
+const GROOM_CONTACT = { name: "Dr. Harbhajan Singh", tel: "+919811512518", shown: "+91 98115 12518" };
+const GROOM_GRANDPARENTS = "Late Smt. Harbans Kaur & Late Sh. Joginder Singh\nSmt. Sumitra Devi & Late Sh. Ram Ji Das";
+const COMPLIMENTS = ["With Best Compliments", "All Near & Dear Ones"];
+
+const SIDES = {
+  both: {
+    couple: [BRIDE, GROOM],
+    parentsShown: ["bride", "groom"],
+    hindi: true,
+    punjabi: true,
+    family: [
+      ["Grandparents", GROOM_GRANDPARENTS],
+      ["Parents", "Jasvinder Kaur & Dr. Harbhajan Singh\nPushpa & Rajesh Sharma"],
+      ["Family & Relatives", "Sharma & Saib Parivar"],
+      COMPLIMENTS,
+    ],
+    contacts: [GROOM_CONTACT, BRIDE_CONTACT],
+  },
+  bride: {
+    couple: [BRIDE, GROOM],
+    parentsShown: ["bride"],
+    hindi: true,
+    punjabi: false,
+    family: [["Parents", "Pushpa & Rajesh Sharma"], ["Family & Relatives", "Sharma Parivar"], COMPLIMENTS],
+    contacts: [BRIDE_CONTACT],
+  },
+  groom: {
+    couple: [GROOM, BRIDE],
+    parentsShown: ["groom"],
+    hindi: false,
+    punjabi: true,
+    family: [
+      ["Grandparents", GROOM_GRANDPARENTS],
+      ["Parents", "Jasvinder Kaur & Dr. Harbhajan Singh"],
+      ["Family & Relatives", "Saib Parivar"],
+      COMPLIMENTS,
+    ],
+    contacts: [GROOM_CONTACT],
+  },
+};
 
 const VENUES = [
   {
@@ -739,8 +786,8 @@ function Stamp() {
   );
 }
 
-// Heart-shaped gold wax seal with the embossed BH monogram.
-function Seal() {
+// Heart-shaped gold wax seal with the couple's embossed monogram.
+function Seal({ mono }) {
   return (
     <svg viewBox="-60 -60 120 120" className="seal-svg" aria-hidden="true">
       <defs>
@@ -770,8 +817,8 @@ function Seal() {
       <path d={SEAL_INNER} fill="none" stroke="#6b4512" strokeWidth="1.6" opacity="0.6" transform="translate(0.8 0.9)" />
       <path d={SEAL_RING} fill="none" stroke="#8a6020" strokeWidth=".8" opacity="0.45" strokeDasharray="1.5 3" />
       <g className="seal-mono">
-        <text x="-1" y="7" transform="translate(1 1.2)" fill="#fff2c0">BH</text>
-        <text x="-1" y="7" fill="#7a5214">BH</text>
+        <text x="-1" y="7" transform="translate(1 1.2)" fill="#fff2c0">{mono}</text>
+        <text x="-1" y="7" fill="#7a5214">{mono}</text>
       </g>
       <g clipPath="url(#seal-clip)">
         <rect className="seal-shine" x="-90" y="-60" width="36" height="120" fill="url(#seal-shine-g)" />
@@ -953,7 +1000,12 @@ function Venues() {
 /* =========================================================
    Main invitation
    ========================================================= */
-export default function RoyalInvite() {
+export default function RoyalInvite({ side = "both" }) {
+  const cfg = SIDES[side] ?? SIDES.both;
+  const [first, second] = cfg.couple;
+  const names = `${first.name} & ${second.name}`;
+  const mono = first.name[0] + second.name[0];
+
   // envelope: 'intro' -> 'ready' -> 'opening' -> 'done'
   const [stage, setStage] = useState("intro");
   const stageRef = useRef("intro");
@@ -1115,7 +1167,7 @@ export default function RoyalInvite() {
               {/* address side */}
               <div className="lt-face lt-front">
                 <div className="lt-from">
-                  Bharti &amp; Harsh
+                  {names}
                   <br />
                   New Delhi
                 </div>
@@ -1138,9 +1190,9 @@ export default function RoyalInvite() {
                 <div className="lt-liner" />
                 <div className="lt-card">
                   <div className="lt-card-inside">
-                    <span className="lt-kicker">॥ श्री गणेशाय नमः ॥</span>
+                    {cfg.hindi && <span className="lt-kicker">॥ श्री गणेशाय नमः ॥</span>}
                     <span className="lt-sub">Together with their families</span>
-                    <span className="script lt-names">Bharti &amp; Harsh</span>
+                    <span className="script lt-names">{names}</span>
                     <span className="lt-invite">
                       request the pleasure of your company
                       <br />
@@ -1152,16 +1204,16 @@ export default function RoyalInvite() {
                     <div className="lt-cover-face lt-cover-front">
                       <span className="lt-cover-kicker">Wedding Invitation</span>
                       <span className="script lt-cover-mono">
-                        B
+                        {first.name[0]}
                         <svg viewBox="-8 -8 16 14" aria-hidden="true">
                           <path d={HEART} />
                         </svg>
-                        H
+                        {second.name[0]}
                       </span>
                       <span className="lt-cover-date">24 · 11 · 2026</span>
                     </div>
                     <div className="lt-cover-face lt-cover-back">
-                      <span className="script">Sadde viyah te zaroor aana ji</span>
+                      <span className="script">{cfg.punjabi ? "Sadde viyah te zaroor aana ji" : "Do join us in the celebration"}</span>
                     </div>
                   </div>
                 </div>
@@ -1182,7 +1234,7 @@ export default function RoyalInvite() {
                 </div>
                 <Laurel />
                 <div className="lt-seal">
-                  <Seal />
+                  <Seal mono={mono} />
                 </div>
                 <span className="lt-burst" aria-hidden="true">
                   {Array.from({ length: 14 }, (_, i) => (
@@ -1221,12 +1273,12 @@ export default function RoyalInvite() {
           <Garland />
           <div className="hero-copy-wrap">
             <div className="hero-copy">
-              <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>
+              {cfg.hindi && <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>}
               <p className="hero-pre">The wedding of</p>
               <h1 className="hero-names">
-                <span className="hn-1">Bharti</span>
+                <span className="hn-1">{first.name}</span>
                 <span className="hn-amp">&amp;</span>
-                <span className="hn-2">Harsh</span>
+                <span className="hn-2">{second.name}</span>
               </h1>
               <p className="hero-date">
                 <i />
@@ -1265,17 +1317,21 @@ export default function RoyalInvite() {
           <Band kind="phulkari" />
           <Sparkles count={14} />
           <div className="blessings rv rv-blur">
+            {cfg.punjabi && (
             <p className="gurbani" lang="pa">
               ਗੁਰੁ ਪੂਰਾ ਆਰਾਧੇ ॥ ਕਾਰਜ ਸਗਲੇ ਸਾਧੇ ॥
               <br />
               ਸਗਲ ਮਨੋਰਥ ਪੂਰੇ ॥ ਬਾਜੇ ਅਨਹਦ ਤੂਰੇ ॥੧॥
             </p>
-            <span className="blessings-sep" aria-hidden="true" />
+            )}
+            {cfg.punjabi && cfg.hindi && <span className="blessings-sep" aria-hidden="true" />}
+            {cfg.hindi && (
             <p className="shloka" lang="sa">
               वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।
               <br />
               निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
             </p>
+            )}
           </div>
           <Title>Dear Friends &amp; Family,</Title>
           <p className="body-copy rv rv-blur">
@@ -1283,21 +1339,21 @@ export default function RoyalInvite() {
             honour of your gracious presence as we begin our forever.
           </p>
           <div className="couple">
-            <div className="person rv rv-l">
-              <div className="person-name">Bharti Sharma</div>
-              <div className="person-parents">Daughter of Smt. Pushpa Sharma &amp; Sh. Rajesh Sharma</div>
-            </div>
-            <div className="script couple-with rv rv-z">with</div>
-            <div className="person rv rv-r">
-              <div className="person-name">Harsh Saib</div>
-              <div className="person-parents">Son of Smt. Jasvinder Kaur &amp; Dr. Harbhajan Singh</div>
-            </div>
+            {cfg.couple.map((person, i) => (
+              <div key={person.side} className="couple-part">
+                {i > 0 && <div className="script couple-with rv rv-z">with</div>}
+                <div className={`person rv ${i === 0 ? "rv-l" : "rv-r"}`}>
+                  <div className="person-name">{person.full}</div>
+                  {cfg.parentsShown.includes(person.side) && <div className="person-parents">{person.parents}</div>}
+                </div>
+              </div>
+            ))}
           </div>
           <p className="body-copy rv rv-blur">
             Your love and support mean the world to us, and we would be honoured to have you by our side as we
             say &ldquo;forever.&rdquo;
           </p>
-          <p className="script punjabi-line rv">Sadde viyah te zaroor aana ji</p>
+          {cfg.punjabi && <p className="script punjabi-line rv">Sadde viyah te zaroor aana ji</p>}
         </section>
 
         {/* =========================================================
@@ -1327,7 +1383,7 @@ export default function RoyalInvite() {
             </div>
           )}
           <p className="cd-date rv">Tuesday, 24th November 2026</p>
-          <a className="pill pill-wine rv" href={CALENDAR_URL} target="_blank" rel="noreferrer">
+          <a className="pill pill-wine rv" href={calendarUrl(names)} target="_blank" rel="noreferrer">
             <CalendarPlus size={14} /> Save the Date
           </a>
         </section>
@@ -1357,20 +1413,12 @@ export default function RoyalInvite() {
           <Band kind="phulkari" />
           <Title>With Love &amp; Blessings</Title>
           <div className="family">
-            {[
-              [
-                "Grandparents",
-                "Late Smt. Harbans Kaur & Late Sh. Joginder Singh\nSmt. Sumitra Devi & Late Sh. Ram Ji Das",
-              ],
-              ["Parents", "Jasvinder Kaur & Dr. Harbhajan Singh\nPushpa & Rajesh Sharma"],
-              ["Family & Relatives", "Sharma & Saib Parivar"],
-              ["With Best Compliments", "All Near & Dear Ones"],
-            ].map(([role, names], i) => (
+            {cfg.family.map(([role, people], i) => (
               <div key={role} className="family-group rv">
                 {i > 0 && <Flourish />}
                 <div className="family-role">{role}</div>
                 <div className="family-names">
-                  {names.split("\n").map((line) => (
+                  {people.split("\n").map((line) => (
                     <span key={line}>{line}</span>
                   ))}
                 </div>
@@ -1387,14 +1435,14 @@ export default function RoyalInvite() {
           <Title>Our Story</Title>
           <div className="frames rv rv-none">
             <figure className="frame frame-a">
-              <img src="/images/couple_portrait_hb.jpg" alt="Bharti and Harsh" loading="lazy" />
+              <img src="/images/couple_bw.jpg" alt={names} loading="lazy" />
             </figure>
             <figure className="frame frame-b">
-              <img src="/images/event_wedding_hb.jpg" alt="The wedding mandap" loading="lazy" />
+              <img src="/images/couple_stairs.jpg" alt={names} loading="lazy" />
             </figure>
           </div>
           <p className="story-intro rv rv-blur">
-            Ek Punjabi munda, ek Pahadi kudi
+            {cfg.punjabi ? "Ek Punjabi munda, ek Pahadi kudi" : "A Pahadi girl, a Punjabi boy"}
             <span>and one Delhi school</span>
           </p>
           <StoryRoute />
@@ -1460,7 +1508,7 @@ export default function RoyalInvite() {
                 <span>Wishes for the couple</span>
                 <textarea
                   rows={3}
-                  placeholder="Write your blessings for Bharti & Harsh…"
+                  placeholder={`Write your blessings for ${names}…`}
                   value={rsvp.message}
                   onChange={(e) => setRsvp({ ...rsvp, message: e.target.value })}
                 />
@@ -1473,28 +1521,31 @@ export default function RoyalInvite() {
 
           <div className="finale rv rv-none">
             <Sparkles count={18} />
-            <p className="script finale-hope">Tuhaadi udeek rahegi</p>
-            <p className="finale-en">We&rsquo;ll be waiting for you</p>
-            <p className="finale-names">Bharti &amp; Harsh</p>
+            {cfg.punjabi ? (
+              <>
+                <p className="script finale-hope">Tuhaadi udeek rahegi</p>
+                <p className="finale-en">We&rsquo;ll be waiting for you</p>
+              </>
+            ) : (
+              <p className="script finale-hope">Hope to see you there!</p>
+            )}
+            <p className="finale-names">{names}</p>
           </div>
 
           <div className="contacts rv">
             <div className="contacts-title">For any assistance</div>
-            <a href="tel:+919811512518" className="contact">
-              <Phone size={13} />
-              <span>Dr. Harbhajan Singh</span>
-              <b>+91 98115 12518</b>
-            </a>
-            <a href="tel:+919210870136" className="contact">
-              <Phone size={13} />
-              <span>Rajesh Sharma</span>
-              <b>+91 92108 70136</b>
-            </a>
+            {cfg.contacts.map((c) => (
+              <a key={c.tel} href={`tel:${c.tel}`} className="contact">
+                <Phone size={13} />
+                <span>{c.name}</span>
+                <b>{c.shown}</b>
+              </a>
+            ))}
           </div>
         </section>
 
         <footer className="outro rv rv-none">
-          <img src="/images/couple_portrait_hb.jpg" alt="Bharti and Harsh" loading="lazy" />
+          <img src="/images/couple_twirl.jpg" alt={names} loading="lazy" />
           <div className="outro-fade" />
           <div className="outro-copy">
             <span className="script">Forever begins</span>
