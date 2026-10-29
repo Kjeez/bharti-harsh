@@ -623,22 +623,22 @@ const STORY = [
   {
     icon: "book",
     title: "Where it all began",
-    text: "It started in a school in Delhi — a Himachali girl, a Punjabi boy, and a friendship that grew between classes, lunch breaks and long conversations that always felt like home.",
+    text: "It all began at a school in Delhi, where a girl and a boy crossed paths. Between classes, lunch breaks and endless conversations, a simple friendship slowly became something special.",
   },
   {
     icon: "pin",
     title: "Growing up, together",
-    text: "From school corridors to spontaneous food runs across Delhi, through every exam and every high and low, we realised the best adventures are the ones lived together.",
+    text: "From school corridors to spontaneous food runs across Delhi, from exam stress to life’s little adventures, we grew up side by side. Through every high and low, we found comfort, laughter and a constant in each other.",
   },
   {
     icon: "hearts",
     title: "Finding home",
-    text: "Harsh Saib found in Bharti his greatest confidante and brightest smile, while Bharti found in Harsh her rock, partner-in-crime and easiest source of joy.",
+    text: "For Harsh, Bharti became his favourite person to share life with. For Bharti, Harsh became her safe place, her partner-in-crime and the one who could always make her smile. Somewhere along the way, friendship turned into love, and love began to feel like home.",
   },
   {
     icon: "rings",
     title: "And now, forever",
-    text: "From the hills of Himachal to the heart of Punjab, two families now become one — and we cannot wait to celebrate with all of you.",
+    text: "What began in a Delhi school has brought us here, ready to begin our favourite chapter yet. Two people, two families, one beautiful journey ahead — and we can’t wait to celebrate this new beginning with all of you.",
   },
 ];
 
@@ -1447,7 +1447,7 @@ export default function RoyalInvite({ side = "both" }) {
             </figure>
           </div>
           <p className="story-intro rv rv-blur">
-            {cfg.punjabi ? "Ek Punjabi munda, ek Pahadi kudi" : "A Pahadi girl, a Punjabi boy"}
+            Ek Punjabi Munda, Ek Pahadi Kudi
             <span>and one Delhi school</span>
           </p>
           <StoryRoute />
