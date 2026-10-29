@@ -70,7 +70,7 @@ const SIDES = {
     song: "/audio/wedding-bgm.mp3",
     family: [
       ["Grandparents", BRIDE_GRANDPARENTS],
-      ["Parents", `${BRIDE_PARENTS}\n${GROOM_PARENTS}`],
+      ["Parents", BRIDE_PARENTS],
       ["Family & Relatives", "Sharma Parivar"],
       COMPLIMENTS,
     ],
@@ -84,7 +84,7 @@ const SIDES = {
     song: "/audio/harsh-song.mp3",
     family: [
       ["Grandparents", GROOM_GRANDPARENTS],
-      ["Parents", `${GROOM_PARENTS}\n${BRIDE_PARENTS}`],
+      ["Parents", GROOM_PARENTS],
       ["Family & Relatives", "Saib Parivar"],
       COMPLIMENTS,
     ],
