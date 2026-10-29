@@ -1321,7 +1321,7 @@ export default function RoyalInvite({ side = "both" }) {
           <div className="hero-art">
             <Skyline />
             <p className="hero-route">
-              Himachal <i /> Dilli <i /> Punjab
+              Himachal <i /> Delhi <i /> Punjab
             </p>
           </div>
         </section>
