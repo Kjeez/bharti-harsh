@@ -228,6 +228,15 @@ html.inv-locked body {
   margin-bottom: 10px;
 }
 
+.hero-onkar {
+  font-family: "Noto Serif Gurmukhi", serif;
+  font-size: 46px;
+  line-height: 1;
+  color: #f4dca6;
+  text-shadow: 0 0 18px rgba(244, 220, 166, 0.45);
+  margin-bottom: 12px;
+}
+
 .hero-date {
   font-family: "Cinzel", serif;
   font-size: 14px;

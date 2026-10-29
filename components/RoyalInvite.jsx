@@ -52,6 +52,8 @@ const SIDES = {
     couple: [BRIDE, GROOM],
     hindi: true,
     punjabi: true,
+    onkar: false,
+    song: "/audio/wedding-bgm.mp3",
     family: [
       ["Grandparents", `${GROOM_GRANDPARENTS}\n${BRIDE_GRANDPARENTS}`],
       ["Parents", `${GROOM_PARENTS}\n${BRIDE_PARENTS}`],
@@ -64,6 +66,8 @@ const SIDES = {
     couple: [BRIDE, GROOM],
     hindi: true,
     punjabi: false,
+    onkar: false,
+    song: "/audio/wedding-bgm.mp3",
     family: [
       ["Grandparents", BRIDE_GRANDPARENTS],
       ["Parents", `${BRIDE_PARENTS}\n${GROOM_PARENTS}`],
@@ -76,6 +80,8 @@ const SIDES = {
     couple: [GROOM, BRIDE],
     hindi: false,
     punjabi: true,
+    onkar: true,
+    song: "/audio/harsh-song.mp3",
     family: [
       ["Grandparents", GROOM_GRANDPARENTS],
       ["Parents", `${GROOM_PARENTS}\n${BRIDE_PARENTS}`],
@@ -1128,7 +1134,7 @@ export default function RoyalInvite({ side = "both" }) {
       <div className="progress" aria-hidden="true" />
       <FloralDefs />
       <TextileDefs />
-      <audio ref={audioRef} src="/audio/wedding-bgm.mp3" loop preload="auto" />
+      <audio ref={audioRef} src={cfg.song} loop preload="auto" />
 
       {/* =========================================================
           ENVELOPE
@@ -1278,6 +1284,11 @@ export default function RoyalInvite({ side = "both" }) {
           <Garland />
           <div className="hero-copy-wrap">
             <div className="hero-copy">
+              {cfg.onkar && (
+                <p className="hero-onkar" lang="pa" aria-label="Ik Onkar">
+                  ੴ
+                </p>
+              )}
               {cfg.hindi && <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>}
               <p className="hero-pre">The wedding of</p>
               <h1 className="hero-names">
