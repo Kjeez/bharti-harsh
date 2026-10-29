@@ -1550,6 +1550,7 @@ export default function RoyalInvite({ side = "both" }) {
 
           <div className="contacts rv">
             <div className="contacts-title">For any assistance</div>
+            <p className="contacts-hint">Tap to call</p>
             {cfg.contacts.map((c) => (
               <a key={c.tel} href={`tel:${c.tel}`} className="contact">
                 <Phone size={13} />

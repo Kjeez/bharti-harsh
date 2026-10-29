@@ -814,6 +814,9 @@ html.inv-locked body {
 }
 .contacts {
   margin-top: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .contacts-title {
   font-family: "Cinzel", serif;
@@ -823,15 +826,32 @@ html.inv-locked body {
   color: #d9a9b0;
   margin-bottom: 6px;
 }
+.contacts-hint {
+  font-style: italic;
+  font-size: 14px;
+  color: #e9c9a0;
+  margin-bottom: 12px;
+}
 .contact {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 7px 0;
+  padding: 9px 18px;
+  margin-bottom: 10px;
+  max-width: 100%;
+  border: 1px solid rgba(244, 220, 166, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
   color: #fff;
   text-decoration: none;
   font-size: 17.5px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.contact:hover,
+.contact:active {
+  background: rgba(244, 220, 166, 0.14);
+  border-color: rgba(244, 220, 166, 0.8);
 }
 .contact b {
   font-weight: 500;
