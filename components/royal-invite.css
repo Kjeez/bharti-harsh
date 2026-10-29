@@ -2337,12 +2337,12 @@ html.inv-locked body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 11%;
+  bottom: 19%;
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   color: #f3dcae;
   opacity: 0;
   transform: translateY(8px);
@@ -2350,7 +2350,7 @@ html.inv-locked body {
   pointer-events: none;
 }
 .env-hint .script {
-  font-size: clamp(22px, 7vw, 32px);
+  font-size: clamp(30px, 9.5vw, 44px);
   white-space: nowrap;
   background: linear-gradient(100deg, #c99a45 0%, #fbe8b4 40%, #e0b25c 55%, #fff1c8 70%, #c99a45 100%);
   background-size: 220% 100%;
@@ -2363,7 +2363,7 @@ html.inv-locked body {
 }
 .env-hint-cta {
   font-family: "Cinzel", serif;
-  font-size: 10.5px;
+  font-size: 12px;
   letter-spacing: 4px;
   text-transform: uppercase;
   animation: blink 2.4s ease-in-out infinite;
