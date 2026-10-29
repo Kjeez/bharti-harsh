@@ -41,18 +41,20 @@ const BRIDE = { side: "bride", name: "Bharti", full: "Bharti Sharma", parents: "
 const GROOM = { side: "groom", name: "Harsh", full: "Harsh Saib", parents: "Son of Smt. Jasvinder Kaur & Dr. Harbhajan Singh" };
 const BRIDE_CONTACT = { name: "Rajesh Sharma", tel: "+919210870136", shown: "+91 92108 70136" };
 const GROOM_CONTACT = { name: "Dr. Harbhajan Singh", tel: "+919811512518", shown: "+91 98115 12518" };
-const GROOM_GRANDPARENTS = "Late Smt. Harbans Kaur & Late Sh. Joginder Singh\nSmt. Sumitra Devi & Late Sh. Ram Ji Das";
+const GROOM_GRANDPARENTS = "Late Smt. Harbans Kaur & Late Sh. Joginder Singh";
+const BRIDE_GRANDPARENTS = "Smt. Sumitra Devi & Late Sh. Ram Ji Das";
+const GROOM_PARENTS = "Jasvinder Kaur & Dr. Harbhajan Singh";
+const BRIDE_PARENTS = "Pushpa & Rajesh Sharma";
 const COMPLIMENTS = ["With Best Compliments", "All Near & Dear Ones"];
 
 const SIDES = {
   both: {
     couple: [BRIDE, GROOM],
-    parentsShown: ["bride", "groom"],
     hindi: true,
     punjabi: true,
     family: [
-      ["Grandparents", GROOM_GRANDPARENTS],
-      ["Parents", "Jasvinder Kaur & Dr. Harbhajan Singh\nPushpa & Rajesh Sharma"],
+      ["Grandparents", `${GROOM_GRANDPARENTS}\n${BRIDE_GRANDPARENTS}`],
+      ["Parents", `${GROOM_PARENTS}\n${BRIDE_PARENTS}`],
       ["Family & Relatives", "Sharma & Saib Parivar"],
       COMPLIMENTS,
     ],
@@ -60,20 +62,23 @@ const SIDES = {
   },
   bride: {
     couple: [BRIDE, GROOM],
-    parentsShown: ["bride"],
     hindi: true,
     punjabi: false,
-    family: [["Parents", "Pushpa & Rajesh Sharma"], ["Family & Relatives", "Sharma Parivar"], COMPLIMENTS],
+    family: [
+      ["Grandparents", BRIDE_GRANDPARENTS],
+      ["Parents", `${BRIDE_PARENTS}\n${GROOM_PARENTS}`],
+      ["Family & Relatives", "Sharma Parivar"],
+      COMPLIMENTS,
+    ],
     contacts: [BRIDE_CONTACT],
   },
   groom: {
     couple: [GROOM, BRIDE],
-    parentsShown: ["groom"],
     hindi: false,
     punjabi: true,
     family: [
       ["Grandparents", GROOM_GRANDPARENTS],
-      ["Parents", "Jasvinder Kaur & Dr. Harbhajan Singh"],
+      ["Parents", `${GROOM_PARENTS}\n${BRIDE_PARENTS}`],
       ["Family & Relatives", "Saib Parivar"],
       COMPLIMENTS,
     ],
@@ -1344,7 +1349,7 @@ export default function RoyalInvite({ side = "both" }) {
                 {i > 0 && <div className="script couple-with rv rv-z">with</div>}
                 <div className={`person rv ${i === 0 ? "rv-l" : "rv-r"}`}>
                   <div className="person-name">{person.full}</div>
-                  {cfg.parentsShown.includes(person.side) && <div className="person-parents">{person.parents}</div>}
+                  <div className="person-parents">{person.parents}</div>
                 </div>
               </div>
             ))}
