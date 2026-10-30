@@ -85,7 +85,7 @@ const SIDES = {
     family: [
       ["Grandparents", GROOM_GRANDPARENTS],
       ["Parents", GROOM_PARENTS],
-      ["Family & Relatives", "Saib Parivar"],
+      ["Family & Relatives", "Saib and Rooprai Family"],
       COMPLIMENTS,
     ],
     contacts: [GROOM_CONTACT],
