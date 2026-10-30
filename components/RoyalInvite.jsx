@@ -4,14 +4,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Play, Pause, Check, Phone, CalendarPlus } from "lucide-react";
 import "./royal-invite.css";
 
-// Baraat: 24 November 2026, 6:00 PM IST
-const WEDDING_TARGET_ISO = "2026-11-24T18:00:00+05:30";
-
-const calendarUrl = (names) =>
+const calendarUrl = (names, ev) =>
   "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-  "&text=" + encodeURIComponent(`${names} — Wedding Ceremony`) +
-  "&dates=20261124T123000Z/20261124T183000Z" +
-  "&location=" + encodeURIComponent("Radisson Blu Hotel, Plot 4, Sector 13, Dwarka, New Delhi 110075");
+  "&text=" + encodeURIComponent(`${names} — ${ev.calendar.title}`) +
+  "&dates=" + ev.calendar.dates +
+  "&location=" + encodeURIComponent(ev.calendar.location);
 
 const SCHEDULE = [
   {
@@ -120,7 +117,46 @@ const VENUES = [
   },
 ];
 
-const RSVP_EVENTS = ["Wedding · 24 Nov", "Reception · 25 Nov"];
+/* The full invite covers the wedding and the reception; the reception-only
+   invite (/bharti/reception, /harsh/reception) leaves out the wedding day. */
+const EVENTS = {
+  wedding: {
+    date: "24 · 11 · 2026",
+    postmark: "24·11·26",
+    day: "24",
+    longDate: "Tuesday, 24th November 2026",
+    target: "2026-11-24T18:00:00+05:30", // Baraat, 6:00 PM IST
+    calendar: {
+      title: "Wedding Ceremony",
+      dates: "20261124T123000Z/20261124T183000Z",
+      location: "Radisson Blu Hotel, Plot 4, Sector 13, Dwarka, New Delhi 110075",
+    },
+    envelope: "A wedding invitation",
+    kicker: "Wedding Invitation",
+    pre: "The wedding of",
+    schedule: SCHEDULE,
+    venues: VENUES,
+    rsvp: ["Wedding · 24 Nov", "Reception · 25 Nov"],
+  },
+  reception: {
+    date: "25 · 11 · 2026",
+    postmark: "25·11·26",
+    day: "25",
+    longDate: "Wednesday, 25th November 2026",
+    target: "2026-11-25T18:00:00+05:30", // Reception, 6:00 PM IST
+    calendar: {
+      title: "Grand Reception",
+      dates: "20261125T123000Z/20261125T173000Z",
+      location: "Mystique Banquet, Rama Road, Kirti Nagar, New Delhi 110015",
+    },
+    envelope: "A reception invitation",
+    kicker: "Reception Invitation",
+    pre: "The wedding reception of",
+    schedule: SCHEDULE.filter((d) => d.date === "25 November"),
+    venues: VENUES.filter((v) => v.key === "reception"),
+    rsvp: ["Reception · 25 Nov"],
+  },
+};
 
 /* =========================================================
    Deterministic randomness (identical on server and client)
@@ -774,7 +810,7 @@ function LoveHearts() {
 }
 
 /* A little postage stamp and postmark, so the envelope reads as a love letter */
-function Stamp() {
+function Stamp({ ev }) {
   return (
     <div className="env-stamp" aria-hidden="true">
       <div className="stamp-paper">
@@ -783,14 +819,14 @@ function Stamp() {
             <path d="M8 40V18H32V40M13 40V29Q13 24 20 22Q27 24 27 29V40M6 18H34M9 18V13H31V18M12 13V10H28V13M16 10Q20 5 24 10M5 40H35" />
             <path d={HEART} transform="translate(20 33) scale(.42)" className="stamp-heart" />
           </svg>
-          <span>Dilli · ₹ 24</span>
+          <span>Dilli · ₹ {ev.day}</span>
         </div>
       </div>
       <svg className="postmark" viewBox="0 0 70 40">
         <circle cx="20" cy="20" r="16" />
         <circle cx="20" cy="20" r="12.5" />
         <text x="20" y="18.5">DELHI</text>
-        <text x="20" y="25.5">24·11·26</text>
+        <text x="20" y="25.5">{ev.postmark}</text>
         <path d="M40 12q5-3 10 0t10 0t10 0M40 20q5-3 10 0t10 0t10 0M40 28q5-3 10 0t10 0t10 0" />
       </svg>
     </div>
@@ -906,7 +942,7 @@ function useReveal(enabled) {
 /* =========================================================
    Sections
    ========================================================= */
-function Schedule() {
+function Schedule({ schedule }) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
@@ -938,7 +974,7 @@ function Schedule() {
       <svg className="tl-rose" viewBox="-52 -52 104 104" aria-hidden="true">
         <use href="#rose-white" />
       </svg>
-      {SCHEDULE.map((day) => (
+      {schedule.map((day) => (
         <div key={day.date} className="tl-day">
           <div className="tl-day-label rv rv-z">
             <span>{day.day}</span>
@@ -960,13 +996,14 @@ function Schedule() {
   );
 }
 
-function Venues() {
-  const [active, setActive] = useState("wedding");
-  const v = VENUES.find((x) => x.key === active);
+function Venues({ venues }) {
+  const [active, setActive] = useState(venues[0].key);
+  const v = venues.find((x) => x.key === active);
   return (
     <div className="venues rv rv-none">
+      {venues.length > 1 && (
       <div className="venue-tabs" role="tablist" aria-label="Choose an event">
-        {VENUES.map((x) => (
+        {venues.map((x) => (
           <button
             key={x.key}
             role="tab"
@@ -978,6 +1015,7 @@ function Venues() {
           </button>
         ))}
       </div>
+      )}
       <div className="venue" key={v.key}>
         <div className="venue-event">{v.event}</div>
         <div className="venue-name">{v.name}</div>
@@ -1011,8 +1049,9 @@ function Venues() {
 /* =========================================================
    Main invitation
    ========================================================= */
-export default function RoyalInvite({ side = "both" }) {
+export default function RoyalInvite({ side = "both", event = "wedding" }) {
   const cfg = SIDES[side] ?? SIDES.both;
+  const ev = EVENTS[event] ?? EVENTS.wedding;
   const [first, second] = cfg.couple;
   const names = `${first.name} & ${second.name}`;
   const mono = first.name[0] + second.name[0];
@@ -1023,9 +1062,9 @@ export default function RoyalInvite({ side = "both" }) {
   const [revealed, setRevealed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
-  const countdown = useCountdown(WEDDING_TARGET_ISO);
+  const countdown = useCountdown(ev.target);
 
-  const [rsvp, setRsvp] = useState({ name: "", contact: "", events: ["Wedding · 24 Nov"], message: "" });
+  const [rsvp, setRsvp] = useState({ name: "", contact: "", events: [ev.rsvp[0]], message: "" });
   const [submitted, setSubmitted] = useState(false);
 
   useReveal(revealed);
@@ -1182,7 +1221,7 @@ export default function RoyalInvite({ side = "both" }) {
                   <br />
                   New Delhi
                 </div>
-                <Stamp />
+                <Stamp ev={ev} />
                 <div className="lt-to">
                   <span className="lt-to-label">To,</span>
                   <span className="script lt-to-name">Someone very special</span>
@@ -1209,11 +1248,11 @@ export default function RoyalInvite({ side = "both" }) {
                       <br />
                       as they begin their forever
                     </span>
-                    <span className="lt-date">24 · 11 · 2026 · New Delhi</span>
+                    <span className="lt-date">{ev.date} · New Delhi</span>
                   </div>
                   <div className="lt-cover">
                     <div className="lt-cover-face lt-cover-front">
-                      <span className="lt-cover-kicker">Wedding Invitation</span>
+                      <span className="lt-cover-kicker">{ev.kicker}</span>
                       <span className="script lt-cover-mono">
                         {first.name[0]}
                         <svg viewBox="-8 -8 16 14" aria-hidden="true">
@@ -1221,7 +1260,7 @@ export default function RoyalInvite({ side = "both" }) {
                         </svg>
                         {second.name[0]}
                       </span>
-                      <span className="lt-cover-date">24 · 11 · 2026</span>
+                      <span className="lt-cover-date">{ev.date}</span>
                     </div>
                     <div className="lt-cover-face lt-cover-back">
                       <span className="script">{cfg.punjabi ? "Sadde viyah te zaroor aana ji" : "Do join us in the celebration"}</span>
@@ -1256,7 +1295,7 @@ export default function RoyalInvite({ side = "both" }) {
             </div>
           </div>
           <div className="env-hint">
-            <span className="script">A wedding invitation</span>
+            <span className="script">{ev.envelope}</span>
             <span className="env-hint-cta">Tap the heart to open</span>
           </div>
         </div>
@@ -1290,7 +1329,7 @@ export default function RoyalInvite({ side = "both" }) {
                 </p>
               )}
               {cfg.hindi && <p className="hero-kicker">॥ श्री गणेशाय नमः ॥</p>}
-              <p className="hero-pre">The wedding of</p>
+              <p className="hero-pre">{ev.pre}</p>
               <h1 className="hero-names">
                 <span className="hn-1">{first.name}</span>
                 <span className="hn-amp">&amp;</span>
@@ -1298,7 +1337,7 @@ export default function RoyalInvite({ side = "both" }) {
               </h1>
               <p className="hero-date">
                 <i />
-                24 · 11 · 2026
+                {ev.date}
                 <i />
               </p>
               <p className="hero-tagline">From a Delhi school to forever</p>
@@ -1398,8 +1437,8 @@ export default function RoyalInvite({ side = "both" }) {
               ))}
             </div>
           )}
-          <p className="cd-date rv">Tuesday, 24th November 2026</p>
-          <a className="pill pill-wine rv" href={calendarUrl(names)} target="_blank" rel="noreferrer">
+          <p className="cd-date rv">{ev.longDate}</p>
+          <a className="pill pill-wine rv" href={calendarUrl(names, ev)} target="_blank" rel="noreferrer">
             <CalendarPlus size={14} /> Save the Date
           </a>
         </section>
@@ -1410,7 +1449,7 @@ export default function RoyalInvite({ side = "both" }) {
         <section className="sec wine">
           <Band kind="phulkari" />
           <Title>Schedule of Events</Title>
-          <Schedule />
+          <Schedule schedule={ev.schedule} />
         </section>
 
         {/* =========================================================
@@ -1419,7 +1458,7 @@ export default function RoyalInvite({ side = "both" }) {
         <section className="sec paper">
           <Band kind="kullu" />
           <Title>Location</Title>
-          <Venues />
+          <Venues venues={ev.venues} />
         </section>
 
         {/* =========================================================
@@ -1507,15 +1546,15 @@ export default function RoyalInvite({ side = "both" }) {
               <div className="field">
                 <span>I&rsquo;ll be attending</span>
                 <div className="chips">
-                  {RSVP_EVENTS.map((ev) => (
+                  {ev.rsvp.map((choice) => (
                     <button
                       type="button"
-                      key={ev}
-                      className={`chip ${rsvp.events.includes(ev) ? "on" : ""}`}
-                      aria-pressed={rsvp.events.includes(ev)}
-                      onClick={() => toggleEvent(ev)}
+                      key={choice}
+                      className={`chip ${rsvp.events.includes(choice) ? "on" : ""}`}
+                      aria-pressed={rsvp.events.includes(choice)}
+                      onClick={() => toggleEvent(choice)}
                     >
-                      {ev}
+                      {choice}
                     </button>
                   ))}
                 </div>
@@ -1566,7 +1605,7 @@ export default function RoyalInvite({ side = "both" }) {
           <div className="outro-fade" />
           <div className="outro-copy">
             <span className="script">Forever begins</span>
-            <span className="outro-date">24 · 11 · 2026</span>
+            <span className="outro-date">{ev.date}</span>
           </div>
         </footer>
       </main>
